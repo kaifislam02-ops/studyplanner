@@ -21,12 +21,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.19",   // Standard stable version
+    "autoprefixer": "^10.4.19",    
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
-    "postcss": "^8.4.38",         // Standard stable version
-    "tailwindcss": "^3.4.4",      // Revert to stable v3
+    "postcss": "^8.4.38",         
+    "tailwindcss": "^3.4.4",      
     "typescript": "^5"
-    // REMOVED: "@tailwindcss/postcss"
   }
 }
