@@ -2,8 +2,8 @@
 
 module.exports = {
   plugins: {
-    // 💡 CHANGE THIS LINE BACK to 'tailwindcss'
+    // THIS MUST BE 'tailwindcss', NOT '@tailwindcss/postcss'
     'tailwindcss': {}, 
-    autoprefixer: {}, // Keep this line
+    autoprefixer: {},
   },
 };
