@@ -1,17 +1,18 @@
-// 💡 Add this line at the very top of the file
+// tailwind.config.js
 const colors = require('tailwindcss/colors')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // 💡 THIS MUST BE CORRECTED
   content: [
-    // ... your existing content paths
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        // 💡 This line re-adds the slate colors to your theme
         slate: colors.slate,
-        // Make sure to add any other custom colors you use
       },
     },
   },
