@@ -30,38 +30,48 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
             {subjects.map((sub, i) => (
                 <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
                     
-                    {/* Name Input/Select - FIXED CONTRAST */}
-                    <select
-                        value={sub.name}
-                        onChange={(e) => handleChange(i, "name", e.target.value)}
-                        className="flex-1 bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
-                    >
-                        <option value="" className="bg-[#0a0420] text-gray-300">Select Subject</option>
-                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0a0420] text-white">{s}</option>)}
-                        <option value={sub.name} disabled className="bg-[#0a0420] text-gray-500">--- Custom ---</option>
-                    </select>
+                    {/* Name Input/Select - COMPLETE FIX */}
+                    <div className="flex-1 relative">
+                        <select
+                            value={sub.name}
+                            onChange={(e) => handleChange(i, "name", e.target.value)}
+                            className="w-full bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
+                            style={{ color: 'white' }}
+                        >
+                            <option value="" style={{ backgroundColor: '#0a0420', color: 'white' }}>Select Subject</option>
+                            {COMMON_SUBJECTS.map(s => (
+                                <option key={s} value={s} style={{ backgroundColor: '#0a0420', color: 'white' }}>
+                                    {s}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     
-                    {/* Hours Input - FIXED CONTRAST */}
+                    {/* Hours Input */}
                     <input
                         type="number"
-                        placeholder="Hrs/Day"
+                        placeholder="Hrs"
                         value={sub.hours}
                         onChange={(e) => handleChange(i, "hours", e.target.value)}
-                        className="w-20 bg-[#0a0420] text-center border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white placeholder-gray-400 hover:bg-[#0f062a] transition-colors"
+                        className="w-16 bg-[#0a0420] text-center border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white placeholder-gray-400 hover:bg-[#0f062a] transition-colors"
                         min="0"
                         max="24"
+                        style={{ color: 'white' }}
                     />
                     
-                    {/* Priority Select - FIXED CONTRAST */}
-                    <select
-                        value={sub.priority}
-                        onChange={(e) => handleChange(i, "priority", e.target.value)}
-                        className="w-24 bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
-                    >
-                        <option value="3" className="bg-[#0a0420] text-green-400">🔥 High</option>
-                        <option value="2" className="bg-[#0a0420] text-yellow-400">⚡ Medium</option>
-                        <option value="1" className="bg-[#0a0420] text-blue-400">💧 Low</option>
-                    </select>
+                    {/* Priority Select - COMPLETE FIX */}
+                    <div className="relative">
+                        <select
+                            value={sub.priority}
+                            onChange={(e) => handleChange(i, "priority", e.target.value)}
+                            className="w-24 bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
+                            style={{ color: 'white' }}
+                        >
+                            <option value="3" style={{ backgroundColor: '#0a0420', color: '#10B981' }}>🔥 High</option>
+                            <option value="2" style={{ backgroundColor: '#0a0420', color: '#FBBF24' }}>⚡ Medium</option>
+                            <option value="1" style={{ backgroundColor: '#0a0420', color: '#60A5FA' }}>💧 Low</option>
+                        </select>
+                    </div>
                     
                     {/* Remove Button */}
                     <button 
@@ -97,7 +107,6 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                 </button>
             </div>
 
-            {/* Stats Section - IMPROVED VISIBILITY */}
             <div className="text-sm text-[#cfc0f8] border-t border-purple-900/50 pt-3 space-y-1">
                 <div className="flex justify-between">
                     <span>Requested Hours:</span>
