@@ -1,5 +1,5 @@
 import React from 'react';
-import { Subject } from './app/page'; 
+import { Subject } from '@/app/page';
 
 // CRITICAL: Interface definition is required for the component to compile
 interface SubjectPlannerProps {

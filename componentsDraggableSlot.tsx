@@ -99,17 +99,17 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                 <select
                     value={item}
                     onChange={(e) => updateSlotSubject(index, e.target.value)}
-                    // **FIX 1: Using solid dark background on the select input**
+                    // **FIXED SELECT**: Use solid dark background
                     className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-[#030008] border border-white/20'} text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
                 >
-                    {/* **FIX 2: Ensure ALL options use a deep black background AND explicit white text** */}
+                    {/* **FIXED OPTIONS**: Deep black background AND explicit white text on all options */}
                     <option value="Free" className="bg-[#030008] text-white">Free</option>
                     {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#030008] text-white">{s}</option>)}
                     {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#030008] text-white">{s.name}</option>)}
                 </select>
             )}
             
-            {/* Drag Handle Icon (Optional, helps users know it's draggable) */}
+            {/* Drag Handle Icon */}
             {!isNamaz && (
                 <div className="absolute bottom-1 right-2 text-gray-400/50 hover:text-gray-300 transition-colors" title="Drag to reorder">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
