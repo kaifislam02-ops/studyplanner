@@ -3,8 +3,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Subject, TimetableSlot } from '@/app/page';
 
-// Simple Custom Dropdown Component (built-in to avoid imports)
-const SimpleDropdown: React.FC<{
+// Simple Custom Dropdown
+const CleanDropdown: React.FC<{
   value: string;
   onChange: (value: string) => void;
   options: string[];
@@ -33,11 +33,11 @@ const SimpleDropdown: React.FC<{
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-[#0a0420] border border-purple-700/50 text-white px-3 py-2 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] hover:bg-[#0f062a] transition-colors flex justify-between items-center"
+        className="w-full bg-white border border-gray-200 text-gray-900 px-3 py-2 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-50 transition-all flex justify-between items-center"
       >
-        <span className="truncate">{value || placeholder}</span>
+        <span className="truncate font-medium">{value || placeholder}</span>
         <svg 
-          className={`w-4 h-4 text-purple-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
@@ -47,14 +47,14 @@ const SimpleDropdown: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {options.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => handleSelect(option)}
-              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800 transition-colors border-b border-purple-900/30 last:border-b-0 ${
-                option === value ? 'bg-purple-700' : ''
+              className={`w-full px-3 py-2 text-left text-gray-900 hover:bg-blue-50 transition-all border-b border-gray-100 last:border-b-0 ${
+                option === value ? 'bg-blue-50 text-blue-600' : ''
               }`}
             >
               {option}
@@ -110,15 +110,6 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     const isNamaz = slot.isNamaz;
     const isFree = item === 'Free';
     const bg = getColor(item, subjects);
-    const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20);
-
-    const slotStyles = isNamaz
-        ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" }
-        : isFree
-        ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-        : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}`, opacity: slot.isCompleted ? 0.7 : 1 };
-
-    const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
 
     // Prepare dropdown options
     const dropdownOptions = [
@@ -130,67 +121,67 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     return (
         <div
             ref={setNodeRef}
-            style={{ ...slotStyles, ...style }}
-            className={slotClasses}
+            style={style}
+            className={`bg-white rounded-xl border-2 p-4 transition-all hover:shadow-md ${
+                isNamaz ? 'border-cyan-200 bg-cyan-50' : 
+                isFree ? 'border-gray-200' : 
+                'border-gray-200 hover:border-blue-200'
+            } ${slot.isCompleted && !isNamaz && !isFree ? 'opacity-60' : ''}`}
             {...(!isNamaz && { ...attributes, ...listeners })}
         >
-            {/* Completion Toggle */}
-            {!isNamaz && !isFree && (
-                <button
-                    onClick={() => toggleCompletion(index)}
-                    className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all z-10 ${
-                        slot.isCompleted 
-                            ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
-                            : 'bg-black/50 text-gray-400 hover:bg-black/70 hover:text-white'
-                    }`}
-                    title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                </button>
-            )}
-
-            {/* Time Label */}
-            <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
-                {formatHour(slot.hour)}
+            {/* Header */}
+            <div className="flex justify-between items-start mb-3">
+                <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {formatHour(slot.hour)}
+                </div>
+                
+                {!isNamaz && !isFree && (
+                    <button
+                        onClick={() => toggleCompletion(index)}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                            slot.isCompleted 
+                                ? 'bg-green-500 border-green-500 text-white' 
+                                : 'bg-white border-gray-300 hover:border-green-500'
+                        }`}
+                        title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
+                    >
+                        {slot.isCompleted && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                        )}
+                    </button>
+                )}
             </div>
 
+            {/* Content */}
             {isNamaz ? (
-                <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg bg-cyan-700/30 border border-cyan-500/30">
-                    {item.split(' ')[1]}
+                <div className="text-center">
+                    <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-cyan-600 text-lg">🕌</span>
+                    </div>
+                    <div className="font-semibold text-cyan-700">{item.split(' ')[1]}</div>
+                    <div className="text-xs text-cyan-600">Prayer Time</div>
                 </div>
             ) : (
-                <SimpleDropdown
+                <CleanDropdown
                     value={item}
                     onChange={(newValue) => updateSlotSubject(index, newValue)}
                     options={dropdownOptions}
-                    placeholder="🕊️ Free Time"
+                    placeholder="Free Time"
                 />
             )}
             
-            {/* Drag Handle Icon */}
+            {/* Drag Handle */}
             {!isNamaz && (
                 <div 
-                    className="absolute bottom-2 right-2 text-gray-400/60 hover:text-gray-300 transition-colors cursor-grab active:cursor-grabbing z-10"
+                    className="absolute bottom-2 right-2 text-gray-300 hover:text-gray-500 transition-colors cursor-grab active:cursor-grabbing"
                     title="Drag to reorder"
                     {...(!isNamaz && { ...attributes, ...listeners })}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                     </svg>
-                </div>
-            )}
-
-            {/* Completion Status Badge */}
-            {!isNamaz && !isFree && slot.isCompleted && (
-                <div className="absolute top-2 left-2 z-10">
-                    <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Done
-                    </div>
                 </div>
             )}
         </div>
