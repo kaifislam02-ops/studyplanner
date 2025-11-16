@@ -35,8 +35,16 @@ const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 // Colors for subjects (used for small legend chips)
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
-// Type for subject (retains priority)
-type Subject = { name: string; hours: string; priority: string };
+// Type for subject (Planned Hours)
+type Subject = { name: string; hours: string };
+
+// NEW TYPE: Timetable Slot with Completion Status
+type TimetableSlot = { 
+    subject: string; 
+    isNamaz: boolean; 
+    isCompleted: boolean; 
+    hour: number;
+};
 
 // --- Utility function for shuffling ---
 const shuffleArray = (array: any[]) => {
@@ -47,123 +55,135 @@ const shuffleArray = (array: any[]) => {
   return array;
 };
 
-// --- Helper function to darken a hex color for gradients ---
-const darkenColor = (color: string, percent: number) => {
-  if (!color.startsWith("#")) return color;
-  let [r, g, b] = (color.match(/\w\w/g) || []).map(h => parseInt(h, 16));
-  const p = 1 - percent / 100;
-  r = Math.floor(r * p);
-  g = Math.floor(g * p);
-  b = Math.floor(b * p);
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
+// --- Helper function to format hour ---
+const formatHour = (h:number) => {
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour = h % 12 === 0 ? 12 : h % 12;
+    return `${hour} ${ampm}`;
 };
 
-// --- Pomodoro Timer Component ---
-const PomodoroTimer = () => {
-  const STUDY_TIME = 25 * 60; // 25 minutes
-  const BREAK_TIME = 5 * 60;  // 5 minutes
+// --- Helper function to get color ---
+const getColor = (subject: string, subjects: Subject[]) => {
+    if (!subject || subject === "Free") return "#2d2d2d";
+    if (subject.includes('🔔')) return "#06b6d4"; // Namaz color
+    const idx = COMMON_SUBJECTS.indexOf(subject);
+    if (idx >= 0) return COLORS[idx % COLORS.length];
+    const customIdx = subjects.findIndex(s => s.name === subject);
+    if (customIdx >= 0) return COLORS[customIdx % COLORS.length];
+    return "#6B7280";
+};
 
-  const [time, setTime] = useState(STUDY_TIME);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [isStudyMode, setIsStudyMode] = useState(true); // true = Study, false = Break
+// --- NEW: Study Analytics Panel Component ---
+// This component calculates and displays the planned vs. completed hours.
+const StudyAnalyticsPanel = ({ timetable, plannedSubjects }: { timetable: TimetableSlot[], plannedSubjects: Subject[] }) => {
+    
+    // 1. Calculate Total Planned Hours from the input form
+    const plannedHoursMap: { [key: string]: number } = useMemo(() => {
+        const map: { [key: string]: number } = {};
+        plannedSubjects.forEach(s => {
+            const name = s.name.trim();
+            const hours = parseInt(s.hours || "0");
+            if (name && hours > 0) {
+                map[name] = hours;
+            }
+        });
+        return map;
+    }, [plannedSubjects]);
 
-  const minutes = Math.floor(time / 60).toString().padStart(2, '0');
-  const seconds = (time % 60).toString().padStart(2, '0');
-  const modeText = isStudyMode ? 'Study Mode' : 'Break Time';
+    // 2. Calculate Scheduled and Completed Hours from the timetable grid
+    const analysis = useMemo(() => {
+        const scheduledMap: { [key: string]: number } = {};
+        const completedMap: { [key: string]: number } = {};
+        let totalScheduled = 0;
+        let totalCompleted = 0;
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+        timetable.forEach(slot => {
+            if (!slot.isNamaz && slot.subject !== 'Free') {
+                const subject = slot.subject;
+                scheduledMap[subject] = (scheduledMap[subject] || 0) + 1;
+                totalScheduled++;
 
-    if (isTimerActive && time > 0) {
-      interval = setInterval(() => {
-        setTime(prevTime => prevTime - 1);
-      }, 1000);
-    } else if (time === 0) {
-      setIsTimerActive(false);
-      setIsStudyMode(prevMode => !prevMode);
-      setTime(isStudyMode ? BREAK_TIME : STUDY_TIME);
-      console.log(`Time for ${isStudyMode ? 'Break' : 'Study'}!`);
+                if (slot.isCompleted) {
+                    completedMap[subject] = (completedMap[subject] || 0) + 1;
+                    totalCompleted++;
+                }
+            }
+        });
+
+        // Get unique subjects to display
+        const subjectsInUse = new Set([...Object.keys(plannedHoursMap), ...Object.keys(scheduledMap)]);
+
+        return {
+            scheduledMap,
+            completedMap,
+            totalScheduled,
+            totalCompleted,
+            subjectsInUse: Array.from(subjectsInUse).sort(),
+        };
+    }, [timetable, plannedHoursMap]);
+
+    if (analysis.totalScheduled === 0) {
+        return (
+            <div className="text-center text-[#bfaaff] p-4 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
+                Generate a timetable to see analytics.
+            </div>
+        );
     }
+    
+    return (
+        <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
+            <h3 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📈 Study Analytics (Today)</h3>
+            
+            <p className="text-sm text-[#d3c6ef]">
+                Total Planned Slots: <strong className="text-green-400">{analysis.totalScheduled}</strong>, 
+                Total Completed Slots: <strong className="text-pink-400">{analysis.totalCompleted}</strong>
+            </p>
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerActive, time, isStudyMode]);
-
-  const toggleTimer = () => setIsTimerActive(prev => !prev);
-  
-  const resetTimer = () => {
-    setIsTimerActive(false);
-    setTime(isStudyMode ? STUDY_TIME : BREAK_TIME);
-  };
-
-  const toggleMode = () => {
-    setIsTimerActive(false);
-    setIsStudyMode(prev => !prev);
-    setTime(isStudyMode ? BREAK_TIME : STUDY_TIME);
-  };
-
-  const neonButtonClass = (color: string) =>
-    `px-3 py-1.5 rounded-lg text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
-
-
-  return (
-    <div className="p-4 bg-[#0e0620]/70 rounded-xl border border-[#2b173d] text-center space-y-3 shadow-inner shadow-purple-900/10">
-      <h3 className={`text-xl font-bold tracking-wider ${isStudyMode ? 'text-purple-400' : 'text-green-400'}`}>
-        {modeText}
-      </h3>
-      <div className="text-6xl font-mono font-extrabold text-white bg-black/30 p-4 rounded-lg">
-        {minutes}:{seconds}
-      </div>
-      <div className="flex justify-center gap-2">
-        <button 
-          onClick={toggleTimer} 
-          className={neonButtonClass(isTimerActive ? "bg-yellow-600 hover:bg-yellow-700 text-black" : "bg-green-600 hover:bg-green-700 text-white")}
-        >
-          {isTimerActive ? 'Pause' : 'Start'}
-        </button>
-        <button 
-          onClick={resetTimer} 
-          className={neonButtonClass("bg-gray-600 hover:bg-gray-700 text-white")}
-        >
-          Reset
-        </button>
-        <button 
-          onClick={toggleMode} 
-          className={neonButtonClass("bg-indigo-600 hover:bg-indigo-700 text-white")}
-        >
-          {isStudyMode ? 'Break' : 'Study'}
-        </button>
-      </div>
-    </div>
-  );
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                {analysis.subjectsInUse.map(subject => {
+                    const planned = plannedHoursMap[subject] || 0;
+                    const scheduled = analysis.scheduledMap[subject] || 0;
+                    const completed = analysis.completedMap[subject] || 0;
+                    const color = getColor(subject, plannedSubjects);
+                    const completionPercentage = scheduled > 0 ? (completed / scheduled) * 100 : 0;
+                    
+                    return (
+                        <div key={subject} className="rounded-lg p-2 bg-[#0e0620]/70 border border-[#2b173d] flex flex-col">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm font-semibold" style={{ color: color }}>{subject}</span>
+                                <span className="text-xs text-[#d3c6ef]">
+                                    Completed: <strong className="text-pink-400">{completed}</strong> / Scheduled: <strong className="text-green-400">{scheduled}</strong> {scheduled > 0 && `(${Math.round(completionPercentage)}%)`}
+                                </span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2.5">
+                                <div 
+                                    className="h-2.5 rounded-full" 
+                                    style={{ width: `${completionPercentage}%`, backgroundColor: color }}
+                                ></div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
-// --- END: Pomodoro Timer ---
+// --- END: Study Analytics Panel ---
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
+  const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "" }]);
   
-  // Timetable is a 2D array [day][hour]
-  const [timetable, setTimetable] = useState<string[][]>([]); 
+  // CHANGED: Timetable is now an object array to track completion status
+  const [timetable, setTimetable] = useState<TimetableSlot[]>([]); 
   
   const [timetableName, setTimetableName] = useState("");
   const [savedTimetables, setSavedTimetables] = useState<{id:string,name:string}[]>([]);
   const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
-  const [notes, setNotes] = useState(""); 
-  const [mounted, setMounted] = useState(false);
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // State for view mode and selected day
-  const [viewMode, setViewMode] = useState<'Daily' | 'Weekly'>('Daily');
-  // Index 0 for Mon, 1 for Tue... 6 for Sun
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0); 
-
-  const DAYS_MAP = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], []);
-
-  // --- START: Firebase and Utility Functions (Inside Home) ---
-
+  // Google Sign-In
   const login = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
@@ -178,77 +198,64 @@ export default function Home() {
   const logout = async () => {
     try { await signOut(auth); } catch (e) { console.error(e); }
     setUser(null);
-    setSubjects([{ name: "", hours: "", priority: "3" }]);
+    setSubjects([{ name: "", hours: "" }]);
     setTimetable([]);
     setSavedTimetables([]);
     setSelectedTimetableId("");
     setTimetableName("");
   };
 
-  const addSubject = () => setSubjects(prev => [...prev, { name: "", hours: "", priority: "3" }]);
+  const addSubject = () => setSubjects(prev => [...prev, { name: "", hours: "" }]);
 
+  // Type-safe handler
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     const newSubjects = [...subjects];
     newSubjects[i][field] = value;
     setSubjects(newSubjects);
   };
 
-  const formatHour = (h:number) => {
-    const ampm = h >= 12 ? "PM" : "AM";
-    const hour = h % 12 === 0 ? 12 : h % 12;
-    return `${hour} ${ampm}`;
+  // NEW: Function to toggle the completion status of a timetable slot
+  const toggleCompletion = (index: number) => {
+      const newTT = [...timetable];
+      if (newTT[index] && !newTT[index].isNamaz && newTT[index].subject !== 'Free') {
+          newTT[index].isCompleted = !newTT[index].isCompleted;
+          setTimetable(newTT);
+      }
   };
 
-  const getColor = (subject: string) => {
-    if (!subject || subject === "Free") return "#2d2d2d";
-    const idx = COMMON_SUBJECTS.indexOf(subject);
-    if (idx >= 0) return COLORS[idx % COLORS.length];
-    const customIdx = subjects.findIndex(s => s.name === subject);
-    if (customIdx >= 0) return COLORS[customIdx % COLORS.length];
-    return "#6B7280";
-  };
 
-  // MODIFIED: Timetable generation logic now creates a weekly schedule
+  // CHANGED: Timetable generation now creates the new TimetableSlot object array
   const generateTimetable = () => {
-    const weeklyGrid: string[][] = [];
+    const grid: TimetableSlot[] = []; // Changed to TimetableSlot[]
+    let subjectQueue: string[] = []; 
     
-    // 1. Filter and sort subjects by priority
-    const validSubjects = subjects
-        .filter(s => s.name && s.hours && s.priority)
-        .sort((a, b) => {
-          const pA = parseInt(a.priority || "0");
-          const pB = parseInt(b.priority || "0");
-          return pB - pA; // Descending sort (Highest priority first)
-        });
-
-    // 2. Total hours needed across the week
-    let subjectQueue: string[] = [];
-    validSubjects.forEach(s => {
-      const hrs = parseInt(s.hours || "0");
-      // Distribute the total required hours across the whole week (7 days)
-      for (let i = 0; i < hrs * 7; i++) subjectQueue.push(s.name); 
+    subjects.forEach(s => {
+      if (s.name && s.hours) {
+        const hrs = parseInt(s.hours || "0");
+        for (let i = 0; i < hrs; i++) subjectQueue.push(s.name);
+      }
     });
-    
-    // 3. Shuffle the entire queue for randomness while maintaining priority bias
+
+    // Randomize the queue for a more balanced schedule
     subjectQueue = shuffleArray(subjectQueue);
 
-    const DAYS_OF_WEEK = 7;
-    
-    for (let day = 0; day < DAYS_OF_WEEK; day++) {
-        const dailyGrid: string[] = [];
-        DAY_HOURS.forEach(h => {
-          const namaz = NAMAZ_SLOTS.find(n => n.time === h);
-          if (namaz) dailyGrid.push(`🔔 ${namaz.name} (${formatHour(h)})`);
-          else dailyGrid.push(subjectQueue.shift() || "Free"); // Fill from the queue
-        });
-        weeklyGrid.push(dailyGrid);
-    }
-    
-    setTimetable(weeklyGrid);
-    setViewMode('Weekly'); // Automatically switch to weekly view
+    DAY_HOURS.forEach(h => {
+      const namaz = NAMAZ_SLOTS.find(n => n.time === h);
+      
+      const slot: TimetableSlot = {
+          subject: namaz ? `🔔 ${namaz.name}` : (subjectQueue.shift() || "Free"),
+          isNamaz: !!namaz,
+          isCompleted: false, // Default to false
+          hour: h,
+      };
+      
+      grid.push(slot);
+    });
+
+    setTimetable(grid);
   };
 
-  // MODIFIED: saveTimetable now saves the 2D array
+  // CHANGED: saveTimetable saves the new object array structure
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -256,14 +263,14 @@ export default function Home() {
     try {
       if (selectedTimetableId) {
         const ref = doc(db, "timetables", selectedTimetableId);
-        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() }); // Saves 2D array
+        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() });
         alert("Timetable updated!");
       } else {
         await addDoc(collection(db, "timetables"), {
           uid: user.uid,
           name: timetableName.trim(),
           subjects,
-          timetable, // Saves 2D array
+          timetable,
           createdAt: new Date()
         });
         alert("Timetable saved!");
@@ -279,6 +286,7 @@ export default function Home() {
     }
   };
 
+
   const deleteTimetable = async (id: string) => {
     if (!user) return;
     const ok = confirm("Are you sure you want to delete this timetable?");
@@ -288,9 +296,8 @@ export default function Home() {
       if (selectedTimetableId === id) {
         setSelectedTimetableId("");
         setTimetable([]);
-        setSubjects([{ name: "", hours: "", priority: "3" }]);
+        setSubjects([{ name: "", hours: "" }]);
         setTimetableName("");
-        setViewMode('Daily'); // Reset view
       }
       await loadAllTimetables(user.uid);
     } catch (e) {
@@ -311,39 +318,35 @@ export default function Home() {
     }
   };
 
-  // MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
+  // CHANGED: loadTimetable handles both old string[] and new TimetableSlot[] structures
   const loadTimetable = async (id: string) => {
     try {
-      const q = query(collection(db, "timetables"), where("__name__", "==", id));
-      const snap = await getDocs(q);
-      
+      const snap = await getDocs(collection(db, "timetables"));
       snap.forEach(docSnap => {
         if (docSnap.id === id) {
           const data = docSnap.data();
-          
-          const loadedSubjects = (data.subjects || [{ name: "", hours: "", priority: "3" }]).map((s:any) => ({
-              name: s.name || "",
-              hours: s.hours || "",
-              priority: s.priority || "3" 
-          }));
-          
+          setSubjects(data.subjects || [{ name: "", hours: "" }]);
+          setTimetableName(data.name || "");
+          setSelectedTimetableId(id);
+
           const loadedTimetable = data.timetable || [];
 
           if (loadedTimetable.length > 0 && typeof loadedTimetable[0] === 'string') {
-             // Backward Compatibility: Old 1D array detected, wrap it for daily view
-             setTimetable([loadedTimetable]); 
-             setViewMode('Daily');
-             setSelectedDayIndex(0);
+              // Backward Compatibility: Old string array detected. Convert it to new format.
+              const convertedTT: TimetableSlot[] = loadedTimetable.map((subject: string, i: number) => {
+                  const namaz = NAMAZ_SLOTS.find(n => subject.includes(n.name));
+                  return {
+                      subject: subject,
+                      isNamaz: !!namaz,
+                      isCompleted: false, // Cannot know completion status of old logs
+                      hour: DAY_HOURS[i] || 0,
+                  };
+              });
+              setTimetable(convertedTT);
           } else {
-             // New 2D array or empty
-             setTimetable(loadedTimetable);
-             setViewMode(loadedTimetable.length === 7 ? 'Weekly' : 'Daily'); // Assume Weekly if 7 days
-             setSelectedDayIndex(0);
+              // New object array structure
+              setTimetable(loadedTimetable);
           }
-
-          setSubjects(loadedSubjects);
-          setTimetableName(data.name || "");
-          setSelectedTimetableId(id);
         }
       });
     } catch (e) {
@@ -351,12 +354,23 @@ export default function Home() {
     }
   };
 
+
+  // Export PDF - dynamic import to avoid SSR/build issues
   const exportToPDF = async () => {
     if (!timetableRef.current) return alert("Nothing to export");
     try {
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(timetableRef.current);
+      
+      // Temporary hide completion/edit elements before export
+      const editElements = document.querySelectorAll('.completion-toggle, .edit-select');
+      editElements.forEach(el => (el as HTMLElement).style.display = 'none');
+      
+      const canvas = await html2canvas(timetableRef.current, { scale: 2 });
+      
+      // Restore hidden elements after canvas creation
+      editElements.forEach(el => (el as HTMLElement).style.display = 'block');
+
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const imgProps = pdf.getImageProperties(imgData);
@@ -369,36 +383,19 @@ export default function Home() {
       alert("Export failed. Check console.");
     }
   };
-  
-  // --- END: Firebase and Utility Functions ---
-
 
   useEffect(() => {
     if (auth.currentUser) {
       setUser(auth.currentUser);
-      loadAllTimetables(auth.currentUser.uid); 
+      loadAllTimetables(auth.currentUser.uid);
     }
   }, []);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
+  // --- Reusable button classes for a unified neon style ---
   const neonButtonClass = (color: string) =>
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
 
 
-  // Logic to determine which day's schedule to show 
-  const currentDaySchedule = useMemo(() => {
-      if (timetable.length === 0) return [];
-      // If Weekly, use the selected day index. Otherwise, use the first (and only) day.
-      if (viewMode === 'Weekly' && selectedDayIndex < timetable.length) {
-          return timetable[selectedDayIndex];
-      }
-      return timetable[0] || [];
-  }, [timetable, viewMode, selectedDayIndex]);
-
-  // Vercel build log indicates the error is here, which means an extra } was placed before this return
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0211] via-[#0f0420] to-[#140426] text-slate-100 p-6">
       {/* NAVBAR */}
@@ -430,11 +427,12 @@ export default function Home() {
       </header>
 
       {/* MAIN */}
-      <main className={`max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT: Controls */}
-        <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl">
+        <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl h-fit sticky top-6">
           <h2 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📚 Plan Your Subjects</h2>
-          
+          <p className="text-sm text-[#d3c6ef]">Define your subjects and the total hours you want to study each for the day.</p>
+
           {/* Subjects list */}
           <div className="space-y-3">
             {subjects.map((s, i) => (
@@ -448,30 +446,19 @@ export default function Home() {
                 />
                 <input
                   type="number"
-                  placeholder="Hrs/Wk" 
+                  placeholder="Hrs"
                   min={0}
                   value={s.hours}
                   onChange={(e) => handleChange(i, "hours", e.target.value)}
-                  className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0 border-l border-purple-900/50"
-                  title="Total hours required per week"
-                />
-                {/* Priority Input (1-5) */}
-                <input
-                  type="number"
-                  placeholder="Prio (1-5)"
-                  min={1}
-                  max={5}
-                  value={s.priority}
-                  onChange={(e) => handleChange(i, "priority", e.target.value)}
-                  className="w-20 bg-transparent py-1 text-sm text-center text-yellow-300 placeholder:text-yellow-600 focus:outline-none focus:ring-0 border-l border-purple-900/50"
-                  title="Priority: 5 is highest, 1 is lowest. Influences scheduling order."
+                  className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0"
+                  title="Hours planned for today"
                 />
                 <button
                   onClick={() => setSubjects(prev => prev.filter((_, idx) => idx !== i))}
-                  className="p-1.5 rounded-full text-red-400 hover:text-red-300 bg-red-900/50 hover:bg-red-800/70 transition-all"
+                  className="p-1 rounded-md bg-red-600/50 hover:bg-red-500 transition text-sm"
                   title="Remove subject"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -481,7 +468,7 @@ export default function Home() {
 
           <div className="flex gap-2">
             <button onClick={addSubject} className={neonButtonClass("flex-1 bg-gradient-to-r from-[#A855F7] to-[#EC4899] text-white")}>+ Add Subject</button>
-            <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate Weekly Timetable</button>
+            <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate Daily Schedule</button>
           </div>
 
           {/* Save / load */}
@@ -525,118 +512,103 @@ export default function Home() {
               </div>
             )}
           </div>
-          
-          {/* Notes Section */}
-          <div className="pt-5 border-t border-purple-900/50 space-y-3">
-            <h3 className="text-xl font-extrabold text-[#e9ddfa]">📝 Quick Notes</h3>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Write down today's goals or quick thoughts here..."
-              rows={4}
-              className="w-full bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff] placeholder:text-[#b9a9d9] focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]"
-            />
-            <p className="text-xs text-[#d3c6ef]/70">Note: For now, these notes are local (not saved to Firebase).</p>
-          </div>
 
           <div className="pt-3 border-t border-black/30 text-xs text-[#d3c6ef] space-y-1">
             <p className="font-bold">Tips:</p>
             <ul className="list-disc ml-4">
-              <li>Timetables are now generated with a **priority bias** (5 is high).</li>
-              <li>Hours are now **weekly total** hours, distributed across 7 days.</li>
+              <li>Use the **checkbox** on each study slot to track completion.</li>
+              <li>Completion status is saved with the timetable.</li>
             </ul>
           </div>
         </section>
 
-        {/* MIDDLE/RIGHT: Pomodoro and Timetable */}
+        {/* RIGHT: Analytics and Timetable */}
         <section className="lg:col-span-2 space-y-6">
-          {/* Pomodoro Timer */}
-          <PomodoroTimer />
+            
+            {/* NEW: Study Analytics Panel */}
+            <StudyAnalyticsPanel 
+                timetable={timetable} 
+                plannedSubjects={subjects} 
+            />
 
           {/* Timetable Display */}
           <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 shadow-2xl">
-            <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your {viewMode} Schedule</h3>
-
-            {/* NEW: Weekly Tabs */}
-            {(viewMode === 'Weekly' && timetable.length === 7) && ( // Check for 7 days
-                <div className="flex flex-wrap gap-2 mb-4 p-2 bg-[#080415] rounded-xl border border-[#2b173d]">
-                    {DAYS_MAP.map((day, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setSelectedDayIndex(index)}
-                            className={`px-3 py-1 text-sm font-semibold rounded-lg transition ${
-                                selectedDayIndex === index 
-                                    ? 'bg-purple-600 text-white shadow-xl shadow-purple-900/50' 
-                                    : 'bg-black/30 text-slate-300 hover:bg-black/50'
-                            }`}
-                        >
-                            {day}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your Daily Schedule</h3>
 
             <div ref={timetableRef} className="w-full">
-                {currentDaySchedule.length === 0 ? (
-                    <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
-                        No timetable yet — add subjects and press <strong className="text-green-400 animate-pulse">Generate Weekly Timetable</strong>.
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {currentDaySchedule.map((item, i) => {
-                            const isNamaz = NAMAZ_SLOTS.some(n => item.includes(n.name));
-                            const isFree = item === 'Free';
-                            const bg = isNamaz ? "#06b6d4" : getColor(item);
-                            const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); 
-                                
-                            const slotStyles = isNamaz 
-                                ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
-                                : isFree
-                                ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-                                : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}` };
-                                
-                            const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
-                            
-                            return (
-                                <div
-                                    key={i}
-                                    className={slotClasses}
-                                    style={slotStyles}
-                                >
-                                    <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
-                                        {DAY_HOURS[i] !== undefined ? formatHour(DAY_HOURS[i]) : ""}
-                                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {timetable.length === 0 ? (
+                  <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
+                    No timetable yet — add subjects and press <strong className="text-green-400">Generate Daily Schedule</strong>.
+                  </div>
+                ) : timetable.map((slot, i) => {
+                  const item = slot.subject;
+                  const isNamaz = slot.isNamaz;
+                  const isFree = item === 'Free';
+                  const bg = getColor(item, subjects);
+                  
+                  const slotStyles = isNamaz 
+                    ? { backgroundColor: bg, border: "1px solid #0891b2" } 
+                    : isFree
+                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
+                    : { background: bg, border: `1px solid ${bg}`, opacity: 0.85 };
+                    
+                  const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={slotClasses}
+                      style={slotStyles}
+                    >
+                      {/* Completion Toggle (NEW) */}
+                      {!isNamaz && !isFree && (
+                        <button
+                          onClick={() => toggleCompletion(i)}
+                          className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
+                            slot.isCompleted 
+                              ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
+                              : 'bg-black/50 text-gray-400 hover:bg-black/70'
+                          }`}
+                          title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                      )}
 
-                                    {isNamaz ? (
-                                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
-                                            {item.split(' ')[1]}
-                                        </div>
-                                    ) : (
-                                        <select
-                                            value={item}
-                                            onChange={(e) => {
-                                                const newTT = [...timetable];
-                                                // Update the specific hour for the selected day
-                                                if(viewMode === 'Weekly' && newTT[selectedDayIndex]){
-                                                    newTT[selectedDayIndex][i] = e.target.value;
-                                                } else if (newTT[0]){
-                                                    newTT[0][i] = e.target.value;
-                                                }
-                                                setTimetable(newTT);
-                                            }}
-                                            className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]`}
-                                        >
-                                            <option value="Free" className="bg-[#080216]">Free</option>
-                                            {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
-                                            {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
-                                        </select>
-                                    )}
-                                    
-                                </div>
-                            );
-                        })}
+
+                      {/* Time Label */}
+                      <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
+                        {formatHour(slot.hour)}
+                      </div>
+
+                      {isNamaz ? (
+                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
+                          {item.split(' ')[1]}
+                        </div>
+                      ) : (
+                        <select
+                          value={item}
+                          onChange={(e) => {
+                            const newTT = [...timetable];
+                            // Update the subject name (keeping completion status intact)
+                            newTT[i] = { ...newTT[i], subject: e.target.value };
+                            setTimetable(newTT);
+                          }}
+                          className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
+                        >
+                          <option value="Free" className="bg-[#080216]">Free</option>
+                          {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
+                          {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
+                        </select>
+                      )}
+                      
                     </div>
-                )}
+                  );
+                })}
+              </div>
             </div>
           </div>
 
