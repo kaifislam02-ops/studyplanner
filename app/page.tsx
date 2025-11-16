@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react"; // 🟢 useMemo added here
+import { useState, useEffect, useRef, useMemo } from "react";
 import { db, auth, provider } from "../firebaseConfig";
 import { signInWithPopup, signOut, User } from "firebase/auth";
 import {
@@ -36,7 +36,7 @@ const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
 // Type for subject (retains priority)
-type Subject = { name: string; hours: string; priority: string }; // 🟢 priority added
+type Subject = { name: string; hours: string; priority: string };
 
 // --- Utility function for shuffling ---
 const shuffleArray = (array: any[]) => {
@@ -144,7 +144,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
   
-  // 🟢 Timetable is now a 2D array [day][hour]
+  // Timetable is a 2D array [day][hour]
   const [timetable, setTimetable] = useState<string[][]>([]); 
   
   const [timetableName, setTimetableName] = useState("");
@@ -155,7 +155,7 @@ export default function Home() {
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // 🟢 State for view mode and selected day
+  // State for view mode and selected day
   const [viewMode, setViewMode] = useState<'Daily' | 'Weekly'>('Daily');
   // Index 0 for Mon, 1 for Tue... 6 for Sun
   const [selectedDayIndex, setSelectedDayIndex] = useState(0); 
@@ -208,7 +208,7 @@ export default function Home() {
     return "#6B7280";
   };
 
-  // 🟢 MODIFIED: Timetable generation logic now creates a weekly schedule
+  // MODIFIED: Timetable generation logic now creates a weekly schedule
   const generateTimetable = () => {
     const weeklyGrid: string[][] = [];
     
@@ -248,7 +248,7 @@ export default function Home() {
     setViewMode('Weekly'); // Automatically switch to weekly view
   };
 
-  // 🟢 MODIFIED: saveTimetable now saves the 2D array
+  // MODIFIED: saveTimetable now saves the 2D array
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -311,7 +311,7 @@ export default function Home() {
     }
   };
 
-  // 🟢 MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
+  // MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
   const loadTimetable = async (id: string) => {
     try {
       const q = query(collection(db, "timetables"), where("__name__", "==", id));
@@ -388,7 +388,7 @@ export default function Home() {
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
 
 
-  // Logic to determine which day's schedule to show (used by Vercel in its log)
+  // Logic to determine which day's schedule to show 
   const currentDaySchedule = useMemo(() => {
       if (timetable.length === 0) return [];
       // If Weekly, use the selected day index. Otherwise, use the first (and only) day.
@@ -398,6 +398,7 @@ export default function Home() {
       return timetable[0] || [];
   }, [timetable, viewMode, selectedDayIndex]);
 
+  // Vercel build log indicates the error is here, which means an extra } was placed before this return
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0211] via-[#0f0420] to-[#140426] text-slate-100 p-6">
       {/* NAVBAR */}
@@ -447,7 +448,7 @@ export default function Home() {
                 />
                 <input
                   type="number"
-                  placeholder="Hrs/Wk" {/* Updated placeholder */}
+                  placeholder="Hrs/Wk" 
                   min={0}
                   value={s.hours}
                   onChange={(e) => handleChange(i, "hours", e.target.value)}
