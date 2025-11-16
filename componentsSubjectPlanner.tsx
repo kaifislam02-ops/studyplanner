@@ -34,10 +34,11 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     <select
                         value={sub.name}
                         onChange={(e) => handleChange(i, "name", e.target.value)}
-                        className="flex-1 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
+                        // Added text-white for clarity
+                        className="flex-1 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white"
                     >
-                        <option value="">Select Subject</option>
-                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420]">{s}</option>)}
+                        <option value="" className="bg-[#0f0420]">Select Subject</option>
+                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420] text-white">{s}</option>)}
                         <option value={sub.name} disabled className="bg-[#0f0420] text-gray-500">--- Custom ---</option>
                     </select>
                     
@@ -55,11 +56,12 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     <select
                         value={sub.priority}
                         onChange={(e) => handleChange(i, "priority", e.target.value)}
-                        className="w-20 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
+                         // Added text-white for clarity
+                        className="w-20 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white"
                     >
-                        <option value="3" className="bg-[#0f0420]">High</option>
-                        <option value="2" className="bg-[#0f0420]">Medium</option>
-                        <option value="1" className="bg-[#0f0420]">Low</option>
+                        <option value="3" className="bg-[#0f0420] text-white">High</option>
+                        <option value="2" className="bg-[#0f0420] text-white">Medium</option>
+                        <option value="1" className="bg-[#0f0420] text-white">Low</option>
                     </select>
                     
                     {/* Remove Button */}

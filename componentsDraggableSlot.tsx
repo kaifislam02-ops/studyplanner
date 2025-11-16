@@ -97,14 +97,15 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                     {item.split(' ')[1]}
                 </div>
             ) : (
+                // Added explicit text-white class to the select for better text clarity
                 <select
                     value={item}
                     onChange={(e) => updateSlotSubject(index, e.target.value)}
-                    className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
+                    className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
                 >
-                    <option value="Free" className="bg-[#080216]">Free</option>
-                    {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
-                    {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
+                    <option value="Free" className="bg-[#080216] text-white">Free</option>
+                    {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216] text-white">{s}</option>)}
+                    {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216] text-white">{s.name}</option>)}
                 </select>
             )}
             
