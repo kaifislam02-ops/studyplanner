@@ -1,7 +1,19 @@
 import React from 'react';
 import { Subject } from './app/page'; 
 
-// CRITICAL FIX: Ensure the export keyword is present
+// CRITICAL FIX: The missing SubjectPlannerProps interface
+interface SubjectPlannerProps {
+    subjects: Subject[];
+    addSubject: () => void;
+    handleChange: (i: number, field: keyof Subject, value: string) => void;
+    removeSubject: (id: string) => void;
+    generateWeeklyTimetable: () => void;
+    totalRequestedHours: number;
+    maxPossibleDailyHours: number;
+    neonButtonClass: (color: string) => string;
+    COMMON_SUBJECTS: string[];
+}
+
 export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
     subjects,
     addSubject,
