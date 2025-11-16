@@ -30,36 +30,37 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
             {subjects.map((sub, i) => (
                 <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
                     {/* Name Input/Select */}
-                    {/* FIX: Explicitly set dark background for the select and options */}
                     <select
                         value={sub.name}
                         onChange={(e) => handleChange(i, "name", e.target.value)}
+                        // Aesthetics Fix: Force dark background on select
                         className="flex-1 bg-[#0f0420] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
+                        {/* Aesthetics Fix: Force dark background on options */}
                         <option value="" className="bg-[#0f0420] text-gray-400">Select Subject</option>
                         {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420] text-white">{s}</option>)}
-                        {/* Ensure custom option is also dark */}
                         <option value={sub.name} disabled className="bg-[#0f0420] text-gray-500">--- Custom ---</option>
                     </select>
                     
                     {/* Hours Input */}
-                    {/* FIX: Explicitly set dark background for the input */}
                     <input
                         type="number"
                         placeholder="Hrs/Day"
                         value={sub.hours}
                         onChange={(e) => handleChange(i, "hours", e.target.value)}
+                        // Aesthetics Fix: Force dark background on input
                         className="w-16 bg-[#0f0420] text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white placeholder-gray-400"
                         min="0"
                     />
                     
                     {/* Priority Select */}
-                    {/* FIX: Explicitly set dark background for the select and options */}
                     <select
                         value={sub.priority}
                         onChange={(e) => handleChange(i, "priority", e.target.value)}
+                        // Aesthetics Fix: Force dark background on select
                         className="w-20 bg-[#0f0420] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
+                        {/* Aesthetics Fix: Force dark background on options */}
                         <option value="3" className="bg-[#0f0420] text-white">High</option>
                         <option value="2" className="bg-[#0f0420] text-white">Medium</option>
                         <option value="1" className="bg-[#0f0420] text-white">Low</option>
