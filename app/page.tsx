@@ -45,7 +45,6 @@ type TimetableSlot = {
     isCompleted: boolean; 
     hour: number;
 };
-// NEW TYPE: Weekly Timetable is a Map of Day Name to Daily Timetable Slots
 type WeeklyTimetable = { [key: string]: TimetableSlot[] };
 
 
@@ -62,6 +61,12 @@ const shuffleArray = (array: any[]) => {
 
 // Utility to generate unique ID
 const createId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+// NEW UTILITY: Get today's day name (e.g., "Monday")
+const getTodayName = () => {
+    const d = new Date();
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+};
 
 // Helper function to get color
 const getColor = (subject: string, subjects: Subject[]) => {
@@ -153,13 +158,161 @@ const PomodoroTimer = ({ neonButtonClass }: { neonButtonClass: (color: string) =
 };
 
 
+// --- Timetable Display Component (NEW/REFACTORED) ---
+const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjects, toggleCompletion, updateSlotSubject, viewMode, setViewMode }: {
+    weeklyTimetable: WeeklyTimetable,
+    selectedDay: string,
+    setSelectedDay: (day: string) => void,
+    subjects: Subject[],
+    toggleCompletion: (i: number) => void,
+    updateSlotSubject: (i: number, sub: string) => void,
+    viewMode: 'daily' | 'weekly',
+    setViewMode: (mode: 'daily' | 'weekly') => void
+}) => {
+    const isWeekly = viewMode === 'weekly';
+    const currentDaySchedule = weeklyTimetable[selectedDay] || [];
+
+    const handleViewToggle = () => {
+        const newMode = isWeekly ? 'daily' : 'weekly';
+        setViewMode(newMode);
+        if (newMode === 'daily') { 
+            setSelectedDay(getTodayName());
+        } else { 
+            // When switching to weekly, if the current day is not in the WEEK_DAYS list, default to Monday
+            if (!WEEK_DAYS.includes(selectedDay)) {
+                setSelectedDay('Monday');
+            }
+        }
+    };
+    
+    return (
+        <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-2 border-b border-purple-900/50 pb-3">
+                <h3 className="text-2xl font-extrabold text-[#efe7ff]">
+                    🗓️ {isWeekly ? "Weekly Schedule" : `Daily Focus`}
+                </h3>
+                {/* View Toggle Button */}
+                <button
+                    onClick={handleViewToggle}
+                    className="px-3 py-1 text-xs rounded-full bg-purple-600 hover:bg-purple-700 text-white transition-colors day-selector"
+                    title={isWeekly ? "Switch to current day view" : "Switch to full weekly planner"}
+                >
+                    {isWeekly ? "→ Daily Focus" : "← Weekly View"}
+                </button>
+            </div>
+            
+            <h4 className="text-xl font-bold mb-4 text-[#cfc0f8]">
+                {selectedDay}
+            </h4>
+
+            {/* Day Selector Tabs (only shown in weekly view) */}
+            {isWeekly && (
+                <div className="flex flex-wrap gap-2 mb-4 day-selector border-b border-purple-900/50 pb-3 -mt-2">
+                    {WEEK_DAYS.map(day => (
+                        <button
+                            key={day}
+                            onClick={() => setSelectedDay(day)}
+                            className={`px-3 py-1 rounded-full text-sm font-medium transition ${
+                                selectedDay === day
+                                    ? 'bg-[#A855F7] text-white shadow-lg shadow-purple-900/50'
+                                    : 'bg-black/40 text-[#cfc0f8] hover:bg-black/60'
+                            }`}
+                        >
+                            {day}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+
+            <div className="w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {currentDaySchedule.length === 0 ? (
+                  <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
+                    {isWeekly 
+                        ? `No timetable for **${selectedDay}** yet — check other days or press **Generate Weekly Timetable**.`
+                        : `No schedule found for today (**${selectedDay}**). Please load or generate a weekly timetable.`}
+                  </div>
+                ) : currentDaySchedule.map((slot, i) => {
+                  const item = slot.subject;
+                  const isNamaz = slot.isNamaz;
+                  const isFree = item === 'Free';
+                  const bg = getColor(item, subjects);
+                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); 
+
+                  // Set distinct styles for the timetable card/slot
+                  const slotStyles = isNamaz 
+                    ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
+                    : isFree
+                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
+                    : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}`, opacity: slot.isCompleted ? 0.7 : 1 };
+                    
+                  const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={slotClasses}
+                      style={slotStyles}
+                    >
+                      {/* Completion Toggle */}
+                      {!isNamaz && !isFree && (
+                        <button
+                          onClick={() => toggleCompletion(i)}
+                          className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
+                            slot.isCompleted 
+                              ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
+                              : 'bg-black/50 text-gray-400 hover:bg-black/70'
+                          }`}
+                          title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </button>
+                      )}
+
+
+                      {/* Time Label */}
+                      <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
+                        {formatHour(slot.hour)}
+                      </div>
+
+                      {isNamaz ? (
+                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
+                          {item.split(' ')[1]}
+                        </div>
+                      ) : (
+                        <select
+                          value={item}
+                          onChange={(e) => updateSlotSubject(i, e.target.value)} // Use new update function
+                          className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
+                        >
+                          <option value="Free" className="bg-[#080216]">Free</option>
+                          {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
+                          {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
+                        </select>
+                      )}
+                      
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+    );
+};
+// --- END: Timetable Display Component ---
+
+
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([{ id: createId(), name: "", hours: "", priority: "3" }]);
   
-  // CHANGED: Weekly timetable state
   const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({}); 
-  const [selectedDay, setSelectedDay] = useState<string>("Monday"); // New state to track the visible day
-  
+  const [selectedDay, setSelectedDay] = useState<string>("Monday"); 
+  // NEW STATE: View mode
+  const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
+
   const [user, setUser] = useState<User | null>(null);
   const [timetableName, setTimetableName] = useState("");
   const [savedTimetables, setSavedTimetables] = useState<{id:string,name:string}[]>([]);
@@ -185,7 +338,8 @@ export default function Home() {
     setUser(null);
     setSubjects([{ id: createId(), name: "", hours: "", priority: "3" }]);
     setWeeklyTimetable({});
-    setSelectedDay("Monday");
+    setSelectedDay(getTodayName()); // Reset to today
+    setViewMode('daily'); // Reset to daily
     setSavedTimetables([]);
     setSelectedTimetableId("");
     setTimetableName("");
@@ -203,7 +357,7 @@ export default function Home() {
   
   const removeSubject = (id: string) => setSubjects(prev => prev.filter(s => s.id !== id));
   
-  // NEW: Function to toggle the completion status of a timetable slot
+  // Function to toggle the completion status of a timetable slot
   const toggleCompletion = (slotIndex: number) => {
       setWeeklyTimetable(prev => {
           const dailySchedule = prev[selectedDay] || [];
@@ -219,7 +373,7 @@ export default function Home() {
       });
   };
 
-  // NEW: Function to manually change a slot's subject
+  // Function to manually change a slot's subject
   const updateSlotSubject = (slotIndex: number, newSubject: string) => {
     setWeeklyTimetable(prev => {
         const dailySchedule = prev[selectedDay] || [];
@@ -271,9 +425,9 @@ export default function Home() {
       });
     });
     return dailyGrid;
-  }, [subjects]); // Dependency on subjects array
+  }, [subjects]); 
 
-  // NEW: Function to generate the entire weekly timetable
+  // Function to generate the entire weekly timetable
   const generateWeeklyTimetable = () => {
     const newWeeklyTimetable: WeeklyTimetable = {};
     WEEK_DAYS.forEach(day => {
@@ -281,15 +435,13 @@ export default function Home() {
         newWeeklyTimetable[day] = generateDailyTimetable();
     });
     setWeeklyTimetable(newWeeklyTimetable);
-    // Set the selected day to Monday if it was empty
-    if (!weeklyTimetable[selectedDay] && WEEK_DAYS.length > 0) {
-        setSelectedDay(WEEK_DAYS[0]);
-    }
+    
+    // Switch to daily view and select today's day after generation
+    setViewMode('daily');
+    setSelectedDay(getTodayName());
   };
 
   // Firestore Logic
-
-  // MODIFIED: saveTimetable now saves the weekly timetable
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -303,7 +455,7 @@ export default function Home() {
         uid: user.uid,
         name: timetableName.trim(),
         subjects: subjectsToSave,
-        weeklyTimetable, // SAVING THE WEEKLY OBJECT
+        weeklyTimetable, 
         notes, 
       };
       
@@ -342,6 +494,8 @@ export default function Home() {
         setSubjects([{ id: createId(), name: "", hours: "", priority: "3" }]);
         setTimetableName("");
         setNotes("");
+        setSelectedDay(getTodayName());
+        setViewMode('daily');
       }
       await loadAllTimetables(user.uid);
     } catch (e) {
@@ -364,7 +518,6 @@ export default function Home() {
   };
 
 
-  // MODIFIED: loadTimetable now loads the weekly timetable
   const loadTimetable = async (id: string) => {
     try {
       const q = query(collection(db, "timetables"), where("__name__", "==", id));
@@ -381,14 +534,12 @@ export default function Home() {
               priority: s.priority || "3" 
           }));
 
-          // LOAD THE WEEKLY TIMETABLE
           const loadedWeeklyTimetable: WeeklyTimetable = data.weeklyTimetable || {};
 
-          // Fallback for old single-day saves (optional, but good for backward compatibility)
+          // Fallback for old single-day saves
           if (Object.keys(loadedWeeklyTimetable).length === 0 && data.timetable && Array.isArray(data.timetable)) {
-             // If only old daily timetable exists, map it to Monday
-             loadedWeeklyTimetable["Monday"] = (data.timetable as any[]).map((slot: any, i: number) => {
-                if (typeof slot === 'string') { // If it's the old string[] format
+             loadedWeeklyTimetable[getTodayName()] = (data.timetable as any[]).map((slot: any, i: number) => {
+                if (typeof slot === 'string') {
                     const subject = slot;
                     const namaz = NAMAZ_SLOTS.find(n => subject.includes(n.name));
                     return { subject: subject, isNamaz: !!namaz, isCompleted: false, hour: DAY_HOURS[i] || 0, };
@@ -403,8 +554,9 @@ export default function Home() {
           setNotes(data.notes || ""); 
           setSelectedTimetableId(id);
           
-          // Set selected day to Monday or the first day available
-          setSelectedDay(Object.keys(loadedWeeklyTimetable).length > 0 ? Object.keys(loadedWeeklyTimetable)[0] : "Monday");
+          // Switch to daily view and select today's day after load
+          setViewMode('daily');
+          setSelectedDay(getTodayName());
         }
       });
     } catch (e) {
@@ -420,10 +572,11 @@ export default function Home() {
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
       
-      // We will export the full scrollable timetable div
+      // Temporary hide completion/edit elements before export
       const editElements = document.querySelectorAll('.completion-toggle, .edit-select, .day-selector');
       editElements.forEach(el => (el as HTMLElement).style.display = 'none');
       
+      // The timetableRef is now inside TimetableDisplay and contains the full content
       const canvas = await html2canvas(timetableRef.current, { scale: 2 });
       
       editElements.forEach(el => (el as HTMLElement).style.display = 'block');
@@ -441,7 +594,9 @@ export default function Home() {
     }
   };
 
+  // Set the initial selected day to today and load auth state
   useEffect(() => {
+    setSelectedDay(getTodayName());
     if (auth.currentUser) {
       setUser(auth.currentUser);
       loadAllTimetables(auth.currentUser.uid);
@@ -452,10 +607,11 @@ export default function Home() {
   const neonButtonClass = (color: string) =>
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
 
-  // NEW: Variable to use for rendering the *currently selected day*
+  // Current Day Schedule (Used by Analytics, always reflects the day shown in the UI)
   const currentDaySchedule = weeklyTimetable[selectedDay] || [];
 
-  // --- Study Analytics Panel Component ---
+
+  // --- Study Analytics Panel Component (Modified to use selectedDay) ---
   const StudyAnalyticsPanel = () => {
       const analysis = useMemo(() => {
           const scheduledMap: { [key: string]: number } = {};
@@ -463,7 +619,6 @@ export default function Home() {
           let totalScheduled = 0;
           let totalCompleted = 0;
 
-          // Analyze ONLY the current day's schedule
           currentDaySchedule.forEach(slot => {
               if (!slot.isNamaz && slot.subject !== 'Free') {
                   const subject = slot.subject;
@@ -494,7 +649,7 @@ export default function Home() {
       
       return (
           <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
-              <h3 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📈 Daily Analytics - {selectedDay}</h3>
+              <h3 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📈 Analytics - {selectedDay}</h3>
               
               <p className="text-sm text-[#d3c6ef]">
                   Total Study Slots Scheduled: <strong className="text-green-400">{analysis.totalScheduled}</strong>, 
@@ -683,7 +838,7 @@ export default function Home() {
                 <ul className="list-disc ml-4 space-y-1">
                     <li>Use **Generate Weekly Timetable** to create 7 different schedules based on your set hours.</li>
                     <li>**Priority** (1-5) influences the scheduling order (5 is highest).</li>
-                    <li>Use the day selector tabs to view and edit each day separately.</li>
+                    <li>Toggle between **Daily Focus** and **Weekly View** above the schedule.</li>
                 </ul>
             </div>
         </section>
@@ -694,99 +849,18 @@ export default function Home() {
           <PomodoroTimer neonButtonClass={neonButtonClass} />
           <StudyAnalyticsPanel />
 
-          <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 shadow-2xl">
-            <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Weekly Schedule</h3>
-
-            {/* Day Selector Tabs (NEW) */}
-            <div className="flex flex-wrap gap-2 mb-4 day-selector border-b border-purple-900/50 pb-3 -mt-2">
-                {WEEK_DAYS.map(day => (
-                    <button
-                        key={day}
-                        onClick={() => setSelectedDay(day)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-                            selectedDay === day
-                                ? 'bg-[#A855F7] text-white shadow-lg shadow-purple-900/50'
-                                : 'bg-black/40 text-[#cfc0f8] hover:bg-black/60'
-                        }`}
-                    >
-                        {day.substring(0, 3)}
-                    </button>
-                ))}
-            </div>
-
-
-            <div ref={timetableRef} className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {currentDaySchedule.length === 0 ? (
-                  <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
-                    No timetable for **{selectedDay}** yet — check other days or press <strong className="text-green-400">Generate Weekly Timetable</strong>.
-                  </div>
-                ) : currentDaySchedule.map((slot, i) => {
-                  const item = slot.subject;
-                  const isNamaz = slot.isNamaz;
-                  const isFree = item === 'Free';
-                  const bg = getColor(item, subjects);
-                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); 
-
-                  // Set distinct styles for the timetable card/slot
-                  const slotStyles = isNamaz 
-                    ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
-                    : isFree
-                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-                    : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}`, opacity: slot.isCompleted ? 0.7 : 1 };
-                    
-                  const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
-                  
-                  return (
-                    <div
-                      key={i}
-                      className={slotClasses}
-                      style={slotStyles}
-                    >
-                      {/* Completion Toggle */}
-                      {!isNamaz && !isFree && (
-                        <button
-                          onClick={() => toggleCompletion(i)}
-                          className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
-                            slot.isCompleted 
-                              ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
-                              : 'bg-black/50 text-gray-400 hover:bg-black/70'
-                          }`}
-                          title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                            </svg>
-                        </button>
-                      )}
-
-
-                      {/* Time Label */}
-                      <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
-                        {formatHour(slot.hour)}
-                      </div>
-
-                      {isNamaz ? (
-                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
-                          {item.split(' ')[1]}
-                        </div>
-                      ) : (
-                        <select
-                          value={item}
-                          onChange={(e) => updateSlotSubject(i, e.target.value)} // Use new update function
-                          className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
-                        >
-                          <option value="Free" className="bg-[#080216]">Free</option>
-                          {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
-                          {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
-                        </select>
-                      )}
-                      
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Timetable Display Component (Refactored) */}
+          <div ref={timetableRef}> {/* Attach ref here for PDF export of the displayed content */}
+              <TimetableDisplay 
+                  weeklyTimetable={weeklyTimetable}
+                  selectedDay={selectedDay}
+                  setSelectedDay={setSelectedDay}
+                  subjects={subjects}
+                  toggleCompletion={toggleCompletion}
+                  updateSlotSubject={updateSlotSubject}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+              />
           </div>
 
           {/* Quick legend / colors */}
