@@ -9,7 +9,6 @@ interface DraggableSlotProps {
     subjects: Subject[];
     toggleCompletion: (i: number) => void;
     updateSlotSubject: (i: number, sub: string) => void;
-    // Props passed down for styling and rendering
     formatHour: (h: number) => string;
     getColor: (subject: string, subjects: Subject[]) => string;
     darkenColor: (color: string, percent: number) => string;
@@ -27,7 +26,6 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     darkenColor,
     COMMON_SUBJECTS,
 }) => {
-    // Dnd Kit hook for sortable items
     const {
         attributes,
         listeners,
@@ -35,14 +33,14 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: slot.hour }); // Use hour as a unique ID for the slot
+    } = useSortable({ id: slot.hour });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 10 : 1, // Keep dragging item on top
-        cursor: slot.isNamaz ? 'default' : 'grab', // Namaz slots aren't draggable
+        zIndex: isDragging ? 10 : 1,
+        cursor: slot.isNamaz ? 'default' : 'grab',
     };
 
     const item = slot.subject;
@@ -51,7 +49,6 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     const bg = getColor(item, subjects);
     const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20);
 
-    // Set distinct styles for the timetable card/slot
     const slotStyles = isNamaz
         ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" }
         : isFree
@@ -65,7 +62,6 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
             ref={setNodeRef}
             style={{ ...slotStyles, ...style }}
             className={slotClasses}
-            // Only assign listeners/attributes if it's NOT a Namaz slot
             {...(!isNamaz && { ...attributes, ...listeners })}
         >
             {/* Completion Toggle */}
@@ -75,7 +71,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                     className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
                         slot.isCompleted 
                             ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
-                            : 'bg-black/50 text-gray-400 hover:bg-black/70'
+                            : 'bg-black/50 text-gray-400 hover:bg-black/70 hover:text-white'
                     }`}
                     title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
                 >
@@ -85,36 +81,61 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                 </button>
             )}
 
-
             {/* Time Label */}
             <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
                 {formatHour(slot.hour)}
             </div>
 
             {isNamaz ? (
-                <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
+                <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg bg-cyan-700/30 border border-cyan-500/30">
                     {item.split(' ')[1]}
                 </div>
             ) : (
                 <select
                     value={item}
                     onChange={(e) => updateSlotSubject(index, e.target.value)}
-                    // **FIXED SELECT**: Use solid dark background
-                    className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-[#030008] border border-white/20'} text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
+                    className={`w-full ${
+                        isFree 
+                            ? 'bg-[#0a0420] border border-[#3d1b5c] text-gray-300' 
+                            : 'bg-[#0a0420] border border-purple-700/50 text-white'
+                    } px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] focus:border-[#9b6cf0] edit-select hover:bg-[#0f062a] transition-colors cursor-pointer`}
                 >
-                    {/* **FIXED OPTIONS**: Deep black background AND explicit white text on all options */}
-                    <option value="Free" className="bg-[#030008] text-white">Free</option>
-                    {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#030008] text-white">{s}</option>)}
-                    {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#030008] text-white">{s.name}</option>)}
+                    <option value="Free" className="bg-[#0a0420] text-white">🕊️ Free Time</option>
+                    {COMMON_SUBJECTS.map(s => (
+                        <option key={s} value={s} className="bg-[#0a0420] text-white">
+                            {s}
+                        </option>
+                    ))}
+                    {subjects.filter(s => s.name.trim() !== "").map(s => (
+                        <option key={s.name} value={s.name} className="bg-[#0a0420] text-white">
+                            {s.name}
+                        </option>
+                    ))}
                 </select>
             )}
             
             {/* Drag Handle Icon */}
             {!isNamaz && (
-                <div className="absolute bottom-1 right-2 text-gray-400/50 hover:text-gray-300 transition-colors" title="Drag to reorder">
+                <div 
+                    className="absolute bottom-2 right-2 text-gray-400/60 hover:text-gray-300 transition-colors cursor-grab active:cursor-grabbing"
+                    title="Drag to reorder"
+                    {...(!isNamaz && { ...attributes, ...listeners })}
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
+                </div>
+            )}
+
+            {/* Completion Status Badge */}
+            {!isNamaz && !isFree && slot.isCompleted && (
+                <div className="absolute top-2 left-2">
+                    <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Done
+                    </div>
                 </div>
             )}
         </div>
