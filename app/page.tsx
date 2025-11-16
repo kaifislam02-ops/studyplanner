@@ -58,7 +58,7 @@ const darkenColor = (color: string, percent: number) => {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
 };
 
-// --- Pomodoro Timer Component (Unchanged) ---
+// --- Pomodoro Timer Component ---
 const PomodoroTimer = () => {
   const STUDY_TIME = 25 * 60; // 25 minutes
   const BREAK_TIME = 5 * 60;  // 5 minutes
@@ -144,7 +144,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
   
-  // 🟢 Timetable is now a 2D array [day][hour]
+  // Timetable is now a 2D array [day][hour]
   const [timetable, setTimetable] = useState<string[][]>([]); 
   
   const [timetableName, setTimetableName] = useState("");
@@ -155,7 +155,7 @@ export default function Home() {
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // 🟢 State for view mode and selected day
+  // State for view mode and selected day
   const [viewMode, setViewMode] = useState<'Daily' | 'Weekly'>('Daily');
   // Index 0 for Mon, 1 for Tue... 6 for Sun
   const [selectedDayIndex, setSelectedDayIndex] = useState(0); 
@@ -208,7 +208,7 @@ export default function Home() {
     return "#6B7280";
   };
 
-  // 🟢 MODIFIED: Timetable generation logic now creates a weekly schedule
+  // MODIFIED: Timetable generation logic now creates a weekly schedule
   const generateTimetable = () => {
     const weeklyGrid: string[][] = [];
     
@@ -226,6 +226,7 @@ export default function Home() {
     validSubjects.forEach(s => {
       const hrs = parseInt(s.hours || "0");
       // Distribute the total required hours across the whole week (7 days)
+      // Multiply by 7 to make 'Hours' input feel like 'Total hours per week'
       for (let i = 0; i < hrs * 7; i++) subjectQueue.push(s.name); 
     });
     
@@ -248,7 +249,7 @@ export default function Home() {
     setViewMode('Weekly'); // Automatically switch to weekly view
   };
 
-  // 🟢 MODIFIED: saveTimetable now saves the 2D array
+  // MODIFIED: saveTimetable now saves the 2D array
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -311,7 +312,7 @@ export default function Home() {
     }
   };
 
-  // 🟢 MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
+  // MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
   const loadTimetable = async (id: string) => {
     try {
       const q = query(collection(db, "timetables"), where("__name__", "==", id));
@@ -337,7 +338,8 @@ export default function Home() {
           } else {
              // New 2D array or empty
              setTimetable(loadedTimetable);
-             setViewMode(loadedTimetable.length === 7 ? 'Weekly' : 'Daily'); // Assume Weekly if 7 days
+             // Check if it's a 7-day schedule to set the view
+             setViewMode(loadedTimetable.length === 7 ? 'Weekly' : 'Daily'); 
              setSelectedDayIndex(0);
           }
 
@@ -447,12 +449,12 @@ export default function Home() {
                 />
                 <input
                   type="number"
-                  placeholder="Hrs/Day" {/* Updated placeholder */}
+                  placeholder="Hrs/Wk" {/* Updated placeholder */}
                   min={0}
                   value={s.hours}
                   onChange={(e) => handleChange(i, "hours", e.target.value)}
                   className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0 border-l border-purple-900/50"
-                  title="Hours required per day on average"
+                  title="Total hours required per week"
                 />
                 {/* Priority Input (1-5) */}
                 <input
