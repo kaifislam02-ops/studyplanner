@@ -1,132 +1,178 @@
-/* globals.css - FIXED & SAFE VERSION */
+/* globals.css — Premium Cosmic UI (Light + Dark) */
+/* DO NOT add or remove anything outside this file unless you know what you're doing. */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-:root {
-  --glass-bg: rgba(255,255,255,0.9);
-  --glass-soft: rgba(255,255,255,0.08);
-  --glass-border: rgba(255,255,255,0.14);
-  --ui-radius: 12px;
-  --ui-radius-sm: 8px;
+:root{
+  --radius: 12px;
+
+  /* Purple-Blue cosmic palette (used in both themes) */
+  --accent-500: #7c3aed; /* purple */
+  --accent-400: #8b5cf6;
+  --accent-300: #a78bfa;
+  --accent-200: #c4b5fd;
+  --accent-100: #ebe7ff;
+
+  --neon-blue: #06b6d4;
+  --neon-pink: #ec4899;
+
+  --glass-contrast: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.12);
+  --glass-shadow: 0 12px 40px rgba(2,6,23,0.6);
 }
 
-/* RESET */
+/* -------------------------
+   Theme tokens: light/dark
+   Use [data-theme="dark"] on <html> for dark
+   ------------------------- */
+html[data-theme="dark"] {
+  --bg-00: #07020a; /* page bg dark */
+  --bg-10: #0b0211;
+  --card-bg: rgba(15,10,25,0.6);
+  --muted: #bfb7e8;
+  --text-primary: #eae6ff;
+  --text-secondary: #cfc6ea;
+  --subtle: rgba(255,255,255,0.04);
+  --glass-bg: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.06);
+  --card-shadow: 0 8px 40px rgba(2,6,23,0.6);
+}
+html[data-theme="light"] {
+  --bg-00: #f8fafc;
+  --bg-10: #eef2ff;
+  --card-bg: rgba(255,255,255,0.9);
+  --muted: #42526e;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --subtle: rgba(2,6,23,0.04);
+  --glass-bg: rgba(255,255,255,0.92);
+  --glass-border: rgba(2,6,23,0.04);
+  --card-shadow: 0 8px 28px rgba(2,6,23,0.06);
+}
+
+/* SAFE RESET (keeps browser defaults for form controls) */
 html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  height: 100%;
   background: transparent;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
+/* Box sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Utility tokens for layout */
+.container-centered {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
-body {
-  line-height: 1.4;
-  -webkit-tap-highlight-color: transparent;
+/* Glass card (tunable for both themes) */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
 }
 
+/* Soft glass for subtle panels */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 10px;
+  border: 1px solid var(--subtle);
+}
+
+/* Focus helpers */
+:focus { outline: none; }
+:focus-visible {
+  outline: 3px solid rgba(124,58,237,0.14);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* Inputs / buttons normalization */
 input, textarea, select, button {
   font-family: inherit;
   font-size: 14px;
   line-height: 1.2;
+  color: inherit;
   background: transparent;
   border: none;
-  color: inherit;
   appearance: none;
 }
 
-:focus {
-  outline: none;
-}
-:focus-visible {
-  outline: 3px solid rgba(99,102,241,0.18);
-  outline-offset: 2px;
-  border-radius: 8px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 999px; }
 
-button {
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-input[type="text"],
-input[type="number"],
-textarea,
-select,
-button[type="button"],
-button[type="submit"] {
-  background-color: transparent;
-}
-
-/* GLASS COMPONENTS */
-.glass {
-  background: var(--glass-soft);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: var(--ui-radius);
-}
-
-.glass-card {
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
-  border: 1px solid rgba(0,0,0,0.04);
-  box-shadow: 0 8px 28px rgba(2,6,23,0.06);
-  border-radius: var(--ui-radius);
-}
-
-.glass-dark {
-  background: rgba(8,7,14,0.5);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 6px 22px rgba(8,7,14,0.3);
-  border-radius: var(--ui-radius);
-}
-
-.smooth-transition {
-  transition: all 0.28s cubic-bezier(.2,.9,.2,1);
-}
-
-/* SCROLLBAR */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.03);
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.12);
-  border-radius: 999px;
-  border: 2px solid rgba(255,255,255,0.02);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.18);
-}
-
-/* Gradient text */
+/* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--accent-500), var(--accent-300));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Shimmer (FIXED – NOW CLOSED PROPERLY!!) */
+/* Floating orbital glows used by background */
+/* Keep animation subtle and performant */
+.floating {
+  animation: floating 4s ease-in-out infinite;
+}
+@keyframes floating {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Premium shimmer for loaders */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0.07) 25%,
-    rgba(255,255,255,0.03) 50%,
-    rgba(255,255,255,0.07) 75%
-  );
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 85%);
   background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Small helper classes used by page.tsx */
+.header-title { font-weight: 700; font-size: 1.125rem; }
+.small-muted { color: var(--text-secondary); font-size: 0.875rem; }
+.card-pad { padding: 1.25rem; }
+
+/* THEME AWARE OVERRIDES for tailwind classes that used gray text */
+.text-primary { color: var(--text-primary) !important; }
+.text-muted { color: var(--text-secondary) !important; }
+
+/* Button dark/light defaults used in page.tsx */
+.btn-ghost {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: inherit;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+}
+.btn-ghost:hover { transform: translateY(-2px); transition: transform 160ms ease; }
+
+/* Theme-aware named colors used in page.tsx */
+.accent-gradient {
+  background: linear-gradient(90deg, var(--accent-400), var(--accent-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Small responsive tweaks */
+@media (max-width: 640px) {
+  .card-pad { padding: 1rem; }
+  .header-title { font-size: 1rem; }
 }

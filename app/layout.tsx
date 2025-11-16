@@ -22,8 +22,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Keep layout server-rendered but let page.tsx (client) toggle theme on documentElement.
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
         {children}
       </body>

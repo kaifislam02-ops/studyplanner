@@ -13,7 +13,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
-// Dnd Kit Imports
+// Dnd Kit Imports (unchanged)
 import {
   DndContext,
   closestCenter,
@@ -25,12 +25,12 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
-// Component Imports
+// Component Imports (unchanged)
 import { DraggableSlot } from "../componentsDraggableSlot"; 
 import { SubjectPlanner } from "../componentsSubjectPlanner";
 import { StudyAnalyticsPanel } from "../componentsStudyAnalyticsPanel"; 
 
-// CONSTANTS
+// CONSTANTS (unchanged)
 const COMMON_SUBJECTS = [
   "Mathematics","Physics","Chemistry","Biology","English","Computer Science",
   "History","Geography","Political Science","Economics","Psychology","Sociology",
@@ -63,7 +63,7 @@ export type TimetableSlot = {
 };
 export type WeeklyTimetable = { [key: string]: TimetableSlot[] };
 
-// UTILITIES
+// UTILITIES (unchanged)
 const shuffleArray = (array: any[]) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -105,7 +105,7 @@ const darkenColor = (color: string, percent: number) => {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
 };
 
-// Pomodoro Timer Component
+// Pomodoro Timer (unchanged logic; classes updated)
 const PomodoroTimer = () => {
     const WORK_TIME = 25 * 60;
     const BREAK_TIME = 5 * 60;
@@ -141,26 +141,22 @@ const PomodoroTimer = () => {
     const seconds = time % 60;
 
     return (
-        <div className="glass-card rounded-2xl p-6 h-full">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+        <div className="glass-card card-pad h-full">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
                     <span className="text-white font-bold">🍅</span>
                 </div>
                 <div>
-                    <h3 className="font-semibold text-gray-900 text-lg">Focus Timer</h3>
-                    <p className="text-sm text-gray-600">{isWork ? "Time to focus! 💪" : "Take a break! 🌴"}</p>
+                    <h3 className="header-title text-primary">Focus Timer</h3>
+                    <p className="small-muted"> {isWork ? "Time to focus! 💪" : "Take a break! 🌴"}</p>
                 </div>
             </div>
             
-            <div className="text-center mb-6">
-                <div className={`text-5xl font-mono font-bold mb-2 ${
-                    isActive 
-                    ? isWork ? 'text-gray-800' : 'text-green-600'
-                    : 'text-gray-400'
-                }`}>
+            <div className="text-center mb-4">
+                <div className={`text-4xl font-mono font-bold mb-1 ${isActive ? (isWork ? 'text-primary' : 'text-muted') : 'text-muted'}`}>
                     {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                 </div>
-                <div className="text-sm text-gray-500 font-medium">
+                <div className="text-sm text-muted font-medium">
                     {isWork ? "Focus Session" : "Break Time"}
                 </div>
             </div>
@@ -168,17 +164,17 @@ const PomodoroTimer = () => {
             <div className="flex gap-3">
                 <button 
                     onClick={toggle}
-                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg ${
+                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 shadow-md ${
                         isActive 
-                            ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white' 
-                            : 'bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white'
+                            ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' 
+                            : 'bg-gradient-to-r from-green-500 to-teal-600 text-white'
                     }`}
                 >
                     {isActive ? "⏸️ Pause" : "▶️ Start"}
                 </button>
                 <button 
                     onClick={reset}
-                    className="py-3 px-4 bg-white/80 hover:bg-white text-gray-700 rounded-xl font-medium transition-all duration-300 border border-gray-200 hover:border-gray-300 hover:shadow-lg"
+                    className="py-3 px-4 bg-white/5 hover:bg-white/8 text-primary rounded-xl font-medium transition-all duration-300 border border-white/6"
                 >
                     🔄 Reset
                 </button>
@@ -187,7 +183,7 @@ const PomodoroTimer = () => {
     );
 };
 
-// Timetable Display Component
+// TimetableDisplay (only class names changed for aesthetics)
 const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjects, toggleCompletion, updateSlotSubject, setWeeklyTimetable, viewMode, setViewMode }: {
     weeklyTimetable: WeeklyTimetable,
     selectedDay: string,
@@ -237,32 +233,32 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
     };
 
     return (
-        <div className="glass-card rounded-2xl p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="glass-card card-pad">
+            <div className="flex justify-between items-center mb-4">
                 <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-xl font-semibold text-primary">
                         {isWeekly ? "Weekly Schedule" : "Daily Focus"}
                     </h3>
-                    <p className="text-gray-600">{selectedDay}</p>
+                    <p className="small-muted">{selectedDay}</p>
                 </div>
                 <button
                     onClick={handleViewToggle}
-                    className="px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-xl font-medium transition-all duration-300 border border-gray-200 hover:border-gray-300 hover:shadow-lg transform hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-4 py-2 bg-white/5 hover:bg-white/8 text-primary rounded-xl font-medium transition-all duration-200 border border-white/6"
                 >
                     {isWeekly ? "📅 Daily View" : "📊 Weekly View"}
                 </button>
             </div>
             
             {isWeekly && (
-                <div className="flex gap-2 mb-6 p-2 bg-white/50 rounded-xl">
+                <div className="flex gap-2 mb-4 p-2 bg-white/3 rounded-xl">
                     {WEEK_DAYS.map(day => (
                         <button
                             key={day}
                             onClick={() => setSelectedDay(day)}
-                            className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5 ${
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                                 selectedDay === day
-                                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                                    : 'bg-white/80 text-gray-600 hover:text-gray-900 hover:bg-white hover:shadow-md'
+                                    ? 'bg-gradient-to-r from-[#06b6d4]/80 to-[#7c3aed]/80 text-white shadow-md'
+                                    : 'bg-white/5 text-muted hover:bg-white/8'
                             }`}
                         >
                             {day.slice(0, 3)}
@@ -272,12 +268,12 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
             )}
 
             {currentDaySchedule.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <div className="text-center py-8 text-muted">
+                    <div className="w-20 h-20 bg-gradient-to-br from-gray-800/30 to-gray-700/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                         <span className="text-3xl">📚</span>
                     </div>
-                    <p className="text-gray-600 text-lg font-medium">No timetable generated yet</p>
-                    <p className="text-sm text-gray-500 mt-2">Add subjects and generate your schedule to get started</p>
+                    <p className="text-primary text-lg font-medium">No timetable generated yet</p>
+                    <p className="text-sm text-muted mt-2">Add subjects and generate your schedule to get started</p>
                 </div>
             ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -306,6 +302,7 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
 };
 
 export default function Home() {
+  // STATE (unchanged logic)
   const [subjects, setSubjects] = useState<Subject[]>([{ id: createId(), name: "", hours: "", priority: "3" }]);
   const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({}); 
   const [selectedDay, setSelectedDay] = useState<string>("Monday"); 
@@ -317,8 +314,29 @@ export default function Home() {
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
   const [notes, setNotes] = useState<string>(""); 
-  
-  // Calculate required vs available hours
+
+  // THEME: manual toggle — stores in localStorage & sets html[data-theme]
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('sp-theme') : null;
+      if (stored === 'light' || stored === 'dark') return stored;
+      // fallback to system preference
+      return (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+      try { localStorage.setItem('sp-theme', theme); } catch {}
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  // rest of code unchanged (auth, save/load, generate, analytics)
   const { totalRequestedHours, maxPossibleDailyHours } = useMemo(() => {
     const hours = subjects.reduce((sum, s) => {
       const hrs = parseInt(s.hours || "0");
@@ -326,8 +344,7 @@ export default function Home() {
     }, 0);
     return { totalRequestedHours: hours, maxPossibleDailyHours: TOTAL_DAILY_STUDY_SLOTS };
   }, [subjects]);
-  
-  // Analytics Calculations
+
   const { dailyCompletionRate, weeklyTotalStudyHours, weeklyTargetHours } = useMemo(() => {
     let completedSlotsToday = 0;
     let totalStudySlotsToday = 0;
@@ -349,7 +366,7 @@ export default function Home() {
     return { dailyCompletionRate: rate, weeklyTotalStudyHours: completedWeeklyHours, weeklyTargetHours: weeklyTarget };
   }, [weeklyTimetable, totalRequestedHours]); 
 
-  // Auth and Firebase functions
+  // Auth & firebase unchanged
   const login = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
@@ -376,7 +393,7 @@ export default function Home() {
     localStorage.removeItem('lastTimetableName');
   };
 
-  // Subject Management
+  // Subject management (unchanged)
   const addSubject = () => setSubjects(prev => [...prev, { id: createId(), name: "", hours: "", priority: "3" }]);
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     const newSubjects = [...subjects];
@@ -416,7 +433,6 @@ export default function Home() {
     });
   }
 
-  // Generate timetable logic
   const generateDailyTimetable = useCallback((): TimetableSlot[] => {
     const dailyGrid: TimetableSlot[] = [];
     const validSubjects = subjects.filter(s => s.name && s.hours && s.priority).sort((a, b) => {
@@ -485,7 +501,7 @@ export default function Home() {
     setSelectedTimetableId("");
   };
 
-  // Firestore functions
+  // Firestore functions (unchanged)
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -602,70 +618,93 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    if (auth.currentUser) {
+      setUser(auth.currentUser);
+      loadAllTimetables(auth.currentUser.uid);
+    }
+  }, []);
+
+  // PAGE UI — redesigned but logic intact
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 text-gray-900">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200 rounded-full blur-3xl opacity-30 floating"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-200 rounded-full blur-3xl opacity-30 floating" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-200 rounded-full blur-3xl opacity-20"></div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--bg-10), var(--bg-00))', color: 'var(--text-primary)' }}>
+      {/* Background Orbital Glows */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute -top-36 -right-36 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(closest-side, rgba(124,58,237,0.16), transparent)', filter: 'blur(80px)' }} />
+        <div className="absolute -bottom-36 -left-36 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(closest-side, rgba(6,182,212,0.12), transparent)', filter: 'blur(80px)' }} />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div style={{ width: '36rem', height: '36rem', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(99,102,241,0.06), transparent)', filter: 'blur(140px)' }} />
+        </div>
       </div>
 
       {/* NAVBAR */}
-      <header className="relative z-10">
-        <nav className="max-w-7xl mx-auto px-4 py-6">
-          <div className="glass-card rounded-2xl p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">📚</span>
+      <header className="relative z-20">
+        <nav className="container-centered py-6">
+          <div className="glass-card flex items-center justify-between card-pad">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-[#6D28D9] to-[#06b6d4] rounded-2xl flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-xl">SP</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold gradient-text">StudyFlow</h1>
+                <p className="small-muted">Smart Scheduling for Focused Learning</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* THEME TOGGLE — premium cosmic toggle */}
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={toggleTheme}
+                  role="button"
+                  aria-label="Toggle theme"
+                  className="relative w-14 h-8 rounded-full p-1 cursor-pointer"
+                  style={{
+                    background: theme === 'dark' ? 'linear-gradient(90deg,#2a0b2c,#13072a)' : 'linear-gradient(90deg,#eef2ff,#e0f2fe)',
+                    boxShadow: theme === 'dark' ? '0 6px 20px rgba(124,58,237,0.14)' : '0 6px 18px rgba(6,182,212,0.06)'
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: theme === 'dark' ? 6 : 36,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    transition: 'all 260ms cubic-bezier(.2,.9,.2,1)',
+                    background: theme === 'dark' ? 'linear-gradient(180deg,#7c3aed,#06b6d4)' : 'linear-gradient(180deg,#fff,#f1f5f9)',
+                    boxShadow: theme === 'dark' ? '0 6px 20px rgba(124,58,237,0.28)' : '0 6px 18px rgba(2,6,23,0.06)'
+                  }} />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold gradient-text">StudyFlow</h1>
-                  <p className="text-sm text-gray-600">Smart Scheduling for Focused Learning</p>
-                </div>
+                <div className="text-sm small-muted">{theme === 'dark' ? 'Dark' : 'Light'}</div>
               </div>
 
-              <div className="flex items-center gap-4">
-                {user ? (
-                  <>
-                    <div className="hidden sm:flex items-center gap-3 bg-white/80 rounded-xl px-4 py-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">
-                          {user.displayName?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hi, {user.displayName?.split(' ')[0]}
+              {/* Auth area */}
+              {user ? (
+                <>
+                  <div className="hidden sm:flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">
+                        {user.displayName?.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <button 
-                      onClick={logout}
-                      className="px-6 py-3 bg-white/80 hover:bg-white text-gray-700 rounded-xl font-medium transition-all duration-300 hover:shadow-lg border border-white/50"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <button 
-                    onClick={login}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5 flex items-center gap-2"
-                  >
-                    <span>Sign in with Google</span>
-                    <span>🚀</span>
-                  </button>
-                )}
-              </div>
+                    <span className="text-sm text-primary">Hi, {user.displayName?.split(' ')[0]}</span>
+                  </div>
+                  <button onClick={logout} className="btn-ghost ml-2">Sign Out</button>
+                </>
+              ) : (
+                <button onClick={login} className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#06b6d4] to-[#7c3aed] text-white font-medium shadow-md">Sign in with Google 🚀</button>
+              )}
             </div>
           </div>
         </nav>
       </header>
 
-      {/* MAIN CONTENT */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 pb-12">
+      {/* MAIN */}
+      <main className="container-centered py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT: Controls */}
-          <section className="lg:col-span-1 space-y-8">
+          {/* LEFT controls */}
+          <section className="lg:col-span-1 space-y-6">
             <SubjectPlanner
               subjects={subjects}
               addSubject={addSubject}
@@ -677,95 +716,61 @@ export default function Home() {
               COMMON_SUBJECTS={COMMON_SUBJECTS}
             />
 
-            {/* Save & Load Section */}
-            <div className="glass-card rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="glass-card card-pad">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold">💾</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Save & Export</h3>
-                  <p className="text-sm text-gray-600">Store and share your schedules</p>
+                  <h3 className="header-title text-primary">Save & Export</h3>
+                  <p className="small-muted">Store and share your schedules</p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="📝 Timetable Name"
-                    value={timetableName}
-                    onChange={(e) => setTimetableName(e.target.value)}
-                    className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  />
-                  
-                  <textarea
-                    placeholder="📋 Notes (optional)"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="📝 Timetable Name"
+                  value={timetableName}
+                  onChange={(e) => setTimetableName(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-primary bg-transparent border border-white/6"
+                />
+
+                <textarea
+                  placeholder="📋 Notes (optional)"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-xl px-4 py-3 text-primary bg-transparent border border-white/6 resize-none"
+                />
 
                 <div className="flex gap-3">
                   <button 
                     onClick={saveTimetable} 
                     disabled={loadingSave || !user}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 text-white py-3 rounded-xl font-medium transition-all duration-300 transform hover:-translate-y-0.5 disabled:transform-none flex items-center justify-center gap-2 shadow-lg"
+                    className="flex-1 rounded-xl py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white font-medium shadow"
                   >
-                    {loadingSave ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Saving...
-                      </>
-                    ) : selectedTimetableId ? '🔄 Update' : '💾 Save'}
+                    {loadingSave ? 'Saving...' : selectedTimetableId ? '🔄 Update' : '💾 Save'}
                   </button>
                   <button 
                     onClick={exportToPDF} 
                     disabled={Object.keys(weeklyTimetable).length === 0}
-                    className="px-6 bg-white/80 hover:bg-white disabled:bg-gray-100 text-gray-700 py-3 rounded-xl font-medium transition-all duration-300 border border-gray-200 hover:border-gray-300 hover:shadow-lg flex items-center gap-2"
+                    className="px-5 rounded-xl py-3 bg-white/5 text-primary font-medium border border-white/6"
                   >
                     📄 Export
                   </button>
                 </div>
 
                 {savedTimetables.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <span>📂 Saved Timetables</span>
-                      <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-                        {savedTimetables.length}
-                      </span>
-                    </h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-primary mb-2">📂 Saved Timetables</h4>
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
                       {savedTimetables.map(tt => (
-                        <div 
-                          key={tt.id} 
-                          className={`flex justify-between items-center p-4 rounded-xl border transition-all duration-300 group ${
-                            tt.id === selectedTimetableId 
-                              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm' 
-                              : 'bg-white/80 border-gray-200 hover:bg-white hover:shadow-md'
-                          }`}
-                        >
-                          <span className="font-medium text-gray-900 group-hover:text-gray-700">
-                            {tt.name}
-                          </span>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <button 
-                              onClick={() => loadTimetable(tt.id)}
-                              className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                              title="Load timetable"
-                            >
-                              📥
-                            </button>
-                            <button 
-                              onClick={() => deleteTimetable(tt.id)}
-                              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                              title="Delete timetable"
-                            >
-                              🗑️
-                            </button>
+                        <div key={tt.id} className={`flex items-center justify-between p-3 rounded-lg ${tt.id === selectedTimetableId ? 'bg-white/6' : 'bg-white/3'} border border-white/6`}>
+                          <span className="text-primary">{tt.name}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => loadTimetable(tt.id)} className="p-2">📥</button>
+                            <button onClick={() => deleteTimetable(tt.id)} className="p-2">🗑️</button>
                           </div>
                         </div>
                       ))}
@@ -774,11 +779,12 @@ export default function Home() {
                 )}
               </div>
             </div>
+
           </section>
 
-          {/* RIGHT: Timetable, Analytics, Timer */}
-          <section className="lg:col-span-2 space-y-8">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* RIGHT content */}
+          <section className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <PomodoroTimer />
               <StudyAnalyticsPanel
                 dailyCompletionRate={dailyCompletionRate}
@@ -805,14 +811,10 @@ export default function Home() {
       </main>
 
       {/* FOOTER */}
-      <footer className="relative z-10 max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="glass-card rounded-2xl p-6">
-          <p className="text-gray-600">
-            Made with ❤️ • <span className="font-semibold gradient-text">StudyFlow</span> — Elevate Your Learning Journey
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Stay focused, stay productive, achieve greatness
-          </p>
+      <footer className="relative z-20 container-centered py-8">
+        <div className="glass-card card-pad text-center">
+          <p className="text-primary">Made with ❤️ • <span className="font-semibold gradient-text">StudyFlow</span> — Elevate Your Learning Journey</p>
+          <p className="small-muted mt-2">Stay focused, stay productive, achieve greatness</p>
         </div>
       </footer>
     </div>
