@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // ADDED useMemo here
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Subject, TimetableSlot } from './app/page'; 
-// NEW IMPORT: Headless UI Listbox for custom styling
 import { Listbox } from '@headlessui/react';
 
 interface DraggableSlotProps {
@@ -59,6 +58,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
 
     const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
 
+    // IMPORTANT: Keep this useMemo block. It was the missing import that caused the issue.
     const allSubjects = useMemo(() => {
         const customSubjects = subjects.filter(s => s.name.trim() !== "").map(s => s.name);
         return ["Free", ...COMMON_SUBJECTS, ...customSubjects];
@@ -121,14 +121,14 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                         {item}
                     </Listbox.Button>
                     
-                    {/* The actual dropdown menu */}
+                    {/* The actual dropdown menu, guaranteed to be dark */}
                     <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#030008] py-1 text-base shadow-lg ring-1 ring-white/20 focus:outline-none sm:text-sm">
                         {allSubjects.map((subject, subjectIdx) => (
                             <Listbox.Option
                                 key={subjectIdx}
                                 value={subject}
-                                // This styling applies to the actual white-box part, forcing it to be dark
                                 className={({ active }) => 
+                                    // Forced dark background and white text on option items
                                     `relative cursor-default select-none py-2 pl-10 pr-4 text-white ${active ? 'bg-purple-700/50' : 'bg-[#030008]'} `
                                 }
                             >
