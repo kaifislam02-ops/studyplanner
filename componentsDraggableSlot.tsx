@@ -27,14 +27,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     darkenColor,
     COMMON_SUBJECTS,
 }) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: slot.hour });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.hour });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -48,22 +41,22 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
     const isNamaz = slot.isNamaz;
     const isFree = item === 'Free';
     const bg = getColor(item, subjects);
-    const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 25);
+    const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20);
 
     const slotStyles = isNamaz
         ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" }
         : isFree
         ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-        : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}`, opacity: slot.isCompleted ? 0.6 : 1 };
+        : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}`, opacity: slot.isCompleted ? 0.7 : 1 };
 
-    const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-2xl hover:scale-[1.02]";
+    const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
 
-    // Memoized subject list
     const allSubjects = useMemo(() => {
         const customSubjects = subjects.filter(s => s.name.trim() !== "").map(s => s.name);
         return ["Free", ...COMMON_SUBJECTS, ...customSubjects];
     }, [subjects, COMMON_SUBJECTS]);
 
+    // NAMAZ SLOT
     if (isNamaz) {
         return (
             <div ref={setNodeRef} style={{ ...slotStyles, ...style }} className={slotClasses}>
@@ -77,6 +70,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
         );
     }
 
+    // NON-NAMAZ SLOT
     return (
         <div
             ref={setNodeRef}
@@ -88,9 +82,9 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
             {!isFree && (
                 <button
                     onClick={() => toggleCompletion(index)}
-                    className={`absolute top-2 right-2 p-1 rounded-full transition-all ${
+                    className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
                         slot.isCompleted 
-                            ? 'bg-green-500 text-white shadow-lg shadow-green-700/50 animate-pulse' 
+                            ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
                             : 'bg-black/50 text-gray-400 hover:bg-black/70'
                     }`}
                     title={slot.isCompleted ? "Mark Incomplete" : "Mark Completed"}
@@ -105,36 +99,26 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                 {formatHour(slot.hour)}
             </div>
 
-            {/* Listbox (Custom Select) */}
+            {/* Listbox Dropdown */}
             <Listbox value={item} onChange={(value) => updateSlotSubject(index, value)} {...attributes} {...listeners}>
                 <div className="relative z-10">
                     <Listbox.Button 
-                        className={`w-full text-left px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] transition-colors ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-gray-900 border border-white/20'} ${slot.isCompleted ? 'line-through text-gray-300' : 'text-white'}`}
+                        className="w-full text-left px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] bg-[#0b0623] border border-[#2b173d] text-white"
                     >
                         {item}
                     </Listbox.Button>
-                    <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#030008] py-1 text-base shadow-lg ring-1 ring-white/20 focus:outline-none sm:text-sm">
-                        {allSubjects.map((subject, idx) => (
+                    
+                    <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#12042b] py-1 text-white shadow-lg ring-1 ring-white/20 focus:outline-none sm:text-sm">
+                        {allSubjects.map((subject, subjectIdx) => (
                             <Listbox.Option
-                                key={idx}
+                                key={subjectIdx}
                                 value={subject}
-                                className={({ active }) => 
-                                    `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-purple-700/50 text-white font-semibold' : 'bg-[#030008] text-white'}`
-                                }
+                                className={({ active }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-purple-700/50' : ''}`}
                             >
                                 {({ selected }) => (
-                                    <>
-                                        <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
-                                            {subject}
-                                        </span>
-                                        {selected && (
-                                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-purple-400">
-                                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                                                </svg>
-                                            </span>
-                                        )}
-                                    </>
+                                    <span className={`${selected ? 'font-semibold' : 'font-normal'}`}>
+                                        {subject}
+                                    </span>
                                 )}
                             </Listbox.Option>
                         ))}
