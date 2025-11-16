@@ -35,18 +35,16 @@ const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 // Colors for subjects (used for small legend chips)
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
-// Type for subject (ADDED PRIORITY)
-type Subject = { name: string; hours: string; priority: string };
+// Type for subject (ADDED ID AND PRIORITY)
+type Subject = { id: string; name: string; hours: string; priority: string };
 
 // NEW TYPE: Timetable Slot with Completion Status
-// This structure is an ARRAY OF OBJECTS (Maps) - fully supported by Firestore.
 type TimetableSlot = { 
     subject: string; 
     isNamaz: boolean; 
-    isCompleted: boolean; 
+    isCompleted: boolean; // Tracks completion status
     hour: number;
 };
-
 
 // --- Utility function for shuffling ---
 const shuffleArray = (array: any[]) => {
@@ -56,6 +54,9 @@ const shuffleArray = (array: any[]) => {
   }
   return array;
 };
+
+// Utility to generate unique ID (simple time-based)
+const createId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
 // --- Helper function to get color ---
 const getColor = (subject: string, subjects: Subject[]) => {
@@ -87,11 +88,72 @@ const darkenColor = (color: string, percent: number) => {
 };
 
 
+// --- Pomodoro Timer Component (NEW FEATURE) ---
+const PomodoroTimer = ({ neonButtonClass }: { neonButtonClass: (color: string) => string }) => {
+    const WORK_TIME = 25 * 60; // 25 minutes
+    const BREAK_TIME = 5 * 60; // 5 minutes
+    const [time, setTime] = useState(WORK_TIME);
+    const [isActive, setIsActive] = useState(false);
+    const [isWork, setIsWork] = useState(true);
+
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const toggle = () => setIsActive(!isActive);
+    const reset = () => {
+        setIsActive(false);
+        setIsWork(true);
+        setTime(WORK_TIME);
+    };
+
+    useEffect(() => {
+        if (isActive && time > 0) {
+            timerRef.current = setTimeout(() => setTime(t => t - 1), 1000);
+        } else if (time === 0) {
+            // Auto-switch
+            const audio = new Audio('https://cdn.jsdelivr.net/gh/tahnik/tunes@latest/bell.mp3');
+            audio.play().catch(e => console.log("Failed to play sound: ", e));
+            
+            setIsWork(!isWork);
+            setTime(isWork ? BREAK_TIME : WORK_TIME);
+        }
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, [isActive, time, isWork]);
+
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+
+    return (
+        <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
+            <h3 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">🍅 Pomodoro Timer</h3>
+            <div className="text-center">
+                <p className={`text-sm font-semibold mb-2 ${isWork ? 'text-green-400' : 'text-pink-400'}`}>
+                    {isWork ? "Focus Time" : "Break Time"}
+                </p>
+                <div className={`text-6xl font-mono font-bold tracking-wider ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                    {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={toggle} className={neonButtonClass(`flex-1 ${isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`)}>
+                    {isActive ? "Pause" : "Start"}
+                </button>
+                <button onClick={reset} className={neonButtonClass("bg-gray-700 hover:bg-gray-600 text-white")}>
+                    Reset
+                </button>
+            </div>
+        </div>
+    );
+};
+// --- END: Pomodoro Timer Component ---
+
+
 export default function Home() {
-  // Priority system added: "3" is default priority
-  const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
+  // Initial subject includes a unique ID and default priority
+  const [subjects, setSubjects] = useState<Subject[]>([{ id: createId(), name: "", hours: "", priority: "3" }]);
   
-  // Timetable is now an ARRAY OF OBJECTS (TimetableSlot[])
+  // Timetable is an ARRAY OF OBJECTS (TimetableSlot[])
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]); 
   
   const [user, setUser] = useState<User | null>(null);
@@ -100,6 +162,9 @@ export default function Home() {
   const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
+  
+  // NEW STATE: Notes
+  const [notes, setNotes] = useState<string>(""); 
 
   // Google Sign-In
   const login = async () => {
@@ -116,22 +181,26 @@ export default function Home() {
   const logout = async () => {
     try { await signOut(auth); } catch (e) { console.error(e); }
     setUser(null);
-    setSubjects([{ name: "", hours: "", priority: "3" }]);
+    setSubjects([{ id: createId(), name: "", hours: "", priority: "3" }]);
     setTimetable([]);
     setSavedTimetables([]);
     setSelectedTimetableId("");
     setTimetableName("");
+    setNotes("");
   };
 
-  // ADDED default priority: "3"
-  const addSubject = () => setSubjects(prev => [...prev, { name: "", hours: "", priority: "3" }]);
+  const addSubject = () => setSubjects(prev => [...prev, { id: createId(), name: "", hours: "", priority: "3" }]);
 
-  // Type-safe handler
+  // Type-safe handler (using index for array)
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     const newSubjects = [...subjects];
-    newSubjects[i][field] = value;
+    // Cast is necessary because 'id' is readonly, but we only target 'name', 'hours', and 'priority'
+    (newSubjects[i] as any)[field] = value; 
     setSubjects(newSubjects);
   };
+  
+  // Use 'id' for stable removal
+  const removeSubject = (id: string) => setSubjects(prev => prev.filter(s => s.id !== id));
   
   // NEW: Function to toggle the completion status of a timetable slot
   const toggleCompletion = (slotIndex: number) => {
@@ -141,10 +210,12 @@ export default function Home() {
           newTT[slotIndex].isCompleted = !newTT[slotIndex].isCompleted;
           setTimetable(newTT);
       }
+      // Note: You might want to automatically save the updated timetable here (updateDoc)
+      // For simplicity, we only save the updated state locally until the next manual save.
   };
 
 
-  // MODIFIED: Generation now creates TimetableSlot[]
+  // MODIFIED: Generation now uses Priority and creates TimetableSlot[] with completion status
   const generateTimetable = () => {
     const dailyGrid: TimetableSlot[] = [];
     
@@ -154,7 +225,7 @@ export default function Home() {
         .sort((a, b) => {
           const pA = parseInt(a.priority || "0");
           const pB = parseInt(b.priority || "0");
-          return pB - pA; 
+          return pB - pA; // Descending sort (5 is higher priority than 1)
         });
 
     // 2. Total hours needed across the day
@@ -183,23 +254,30 @@ export default function Home() {
   };
 
 
-  // MODIFIED: saveTimetable now sends TimetableSlot[]
+  // MODIFIED: saveTimetable now saves subjects (without id), timetable, and notes
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
     setLoadingSave(true);
     try {
+      // Clean subjects: remove 'id' before saving to Firestore
+      const subjectsToSave = subjects.map(({ id, ...rest }) => rest);
+
+      const dataToSave = {
+        uid: user.uid,
+        name: timetableName.trim(),
+        subjects: subjectsToSave,
+        timetable,
+        notes, // NEW: Save notes
+      };
+      
       if (selectedTimetableId) {
         const ref = doc(db, "timetables", selectedTimetableId);
-        // subjects is Array<Object>, timetable is Array<Object>
-        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() }); 
+        await updateDoc(ref, { ...dataToSave, updatedAt: new Date() });
         alert("Timetable updated!");
       } else {
         await addDoc(collection(db, "timetables"), {
-          uid: user.uid,
-          name: timetableName.trim(),
-          subjects,
-          timetable, // This is now TimetableSlot[] (Array of Maps)
+          ...dataToSave,
           createdAt: new Date()
         });
         alert("Timetable saved!");
@@ -208,9 +286,8 @@ export default function Home() {
       setSelectedTimetableId("");
       await loadAllTimetables(user.uid);
     } catch (e) {
-      // Improved error logging
-      console.error("Firebase Save Error (Check Firebase logs):", e); 
-      alert("Failed to save. Check your browser's console (F12) for a detailed 'Firebase Save Error' entry.");
+      console.error("Firebase Save Error:", e); 
+      alert("Failed to save. Check your browser's console (F12).");
     } finally {
       setLoadingSave(false);
     }
@@ -225,8 +302,9 @@ export default function Home() {
       if (selectedTimetableId === id) {
         setSelectedTimetableId("");
         setTimetable([]);
-        setSubjects([{ name: "", hours: "", priority: "3" }]);
+        setSubjects([{ id: createId(), name: "", hours: "", priority: "3" }]);
         setTimetableName("");
+        setNotes(""); // Reset notes
       }
       await loadAllTimetables(user.uid);
     } catch (e) {
@@ -247,7 +325,8 @@ export default function Home() {
     }
   };
 
-  // MODIFIED: loadTimetable now handles TimetableSlot[] (or converts old string[] for backward compatibility)
+
+  // MODIFIED: loadTimetable now handles 'notes' and subject 'priority'
   const loadTimetable = async (id: string) => {
     try {
       const q = query(collection(db, "timetables"), where("__name__", "==", id));
@@ -257,34 +336,39 @@ export default function Home() {
         if (docSnap.id === id) {
           const data = docSnap.data();
           
-          // Load subjects, adding default priority if not present
-          const loadedSubjects = (data.subjects || [{ name: "", hours: "", priority: "3" }]).map((s:any) => ({
+          // Load subjects, adding default id and priority if not present
+          const loadedSubjects: Subject[] = (data.subjects || []).map((s: any) => ({
+              id: createId(), // Assign new local ID
               name: s.name || "",
               hours: s.hours || "",
-              priority: s.priority || "3" 
+              priority: s.priority || "3" // Default priority 3
           }));
           
-          const loadedTimetable = data.timetable || [];
-
-          // Backward Compatibility Check: If the loaded timetable is the OLD string[] (array of strings)
-          if (loadedTimetable.length > 0 && typeof loadedTimetable[0] === 'string') {
-             const convertedTT: TimetableSlot[] = loadedTimetable.map((subject: string, i: number) => {
+          const loadedTimetable: TimetableSlot[] = (data.timetable || []).map((slot: any, i: number) => {
+             // Backward Compatibility/Safety Check
+             if (typeof slot === 'string') { // Old string[] format (or pre-completion status format)
+                 const subject = slot;
                  const namaz = NAMAZ_SLOTS.find(n => subject.includes(n.name));
                  return {
                      subject: subject,
                      isNamaz: !!namaz,
-                     isCompleted: false, // Default to false for old loads
+                     isCompleted: false, // Default to false
                      hour: DAY_HOURS[i] || 0,
                  };
-             });
-             setTimetable(convertedTT);
-          } else {
-             // New TimetableSlot[] or empty array
-             setTimetable(loadedTimetable);
-          }
+             }
+             // New TimetableSlot[] format
+             return { 
+                 subject: slot.subject || "Free", 
+                 isNamaz: !!slot.isNamaz,
+                 isCompleted: !!slot.isCompleted, // Ensure boolean
+                 hour: slot.hour || DAY_HOURS[i] || 0 
+             };
+          });
 
-          setSubjects(loadedSubjects);
+          setSubjects(loadedSubjects.length > 0 ? loadedSubjects : [{ id: createId(), name: "", hours: "", priority: "3" }]);
+          setTimetable(loadedTimetable);
           setTimetableName(data.name || "");
+          setNotes(data.notes || ""); // NEW: Load notes
           setSelectedTimetableId(id);
         }
       });
@@ -292,6 +376,7 @@ export default function Home() {
       console.error("Load timetable error:", e);
     }
   };
+
 
   // Export PDF - dynamic import to avoid SSR/build issues
   const exportToPDF = async () => {
@@ -378,7 +463,7 @@ export default function Home() {
               
               <p className="text-sm text-[#d3c6ef]">
                   Total Study Slots Scheduled: <strong className="text-green-400">{analysis.totalScheduled}</strong>, 
-                  Total Completed: <strong className="text-pink-400">{analysis.totalCompleted}</strong>
+                  Total Completed: <strong className="text-pink-400">{analysis.totalCompleted}</strong>. Overall Completion: <strong className="text-yellow-400">{analysis.totalScheduled > 0 ? `${Math.round((analysis.totalCompleted / analysis.totalScheduled) * 100)}%` : '0%'}</strong>
               </p>
 
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -445,115 +530,133 @@ export default function Home() {
       {/* MAIN */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT: Controls */}
-        <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl h-fit sticky top-6">
-          <h2 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📚 Plan Your Subjects</h2>
-          <p className="text-sm text-[#d3c6ef]">Define your subjects and the total hours you want to study each for the day.</p>
+        <section className="lg:col-span-1 space-y-6">
+            
+            {/* Subject Panel */}
+            <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl h-fit">
+                <h2 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📚 Plan Your Subjects</h2>
+                <p className="text-sm text-[#d3c6ef]">Define your subjects and the total hours you want to study each for the day.</p>
 
-          {/* Subjects list */}
-          <div className="space-y-3">
-            {subjects.map((s, i) => (
-              <div key={i} className="flex gap-2 items-center rounded-lg p-2 bg-[#0e0620]/70 border border-[#2b173d]">
-                <input
-                  type="text"
-                  placeholder="Subject Name"
-                  value={s.name}
-                  onChange={(e) => handleChange(i, "name", e.target.value)}
-                  className="flex-1 bg-transparent px-2 py-1 text-sm text-[#efe7ff] placeholder:text-[#b9a9d9] focus:outline-none focus:ring-0"
+                {/* Subjects list */}
+                <div className="space-y-3">
+                    {subjects.map((s, i) => (
+                    <div key={s.id} className="flex gap-2 items-center rounded-lg p-2 bg-[#0e0620]/70 border border-[#2b173d]">
+                        <input
+                        type="text"
+                        placeholder="Subject Name"
+                        value={s.name}
+                        onChange={(e) => handleChange(i, "name", e.target.value)}
+                        className="flex-1 bg-transparent px-2 py-1 text-sm text-[#efe7ff] placeholder:text-[#b9a9d9] focus:outline-none focus:ring-0"
+                        />
+                        <input
+                        type="number"
+                        placeholder="Hrs"
+                        min={0}
+                        value={s.hours}
+                        onChange={(e) => handleChange(i, "hours", e.target.value)}
+                        className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0 border-l border-purple-900/50"
+                        title="Total hours required per day"
+                        />
+                        {/* Priority Input (1-5) - RE-ADDED */}
+                        <input
+                        type="number"
+                        placeholder="Prio (1-5)"
+                        min={1}
+                        max={5}
+                        value={s.priority}
+                        onChange={(e) => handleChange(i, "priority", e.target.value)}
+                        className="w-20 bg-transparent py-1 text-sm text-center text-yellow-300 placeholder:text-yellow-600 focus:outline-none focus:ring-0 border-l border-purple-900/50"
+                        title="Priority: 5 is highest, 1 is lowest. Influences scheduling order."
+                        />
+                        <button
+                        onClick={() => removeSubject(s.id)}
+                        className="p-1.5 rounded-full text-red-400 hover:text-red-300 bg-red-900/50 hover:bg-red-800/70 transition-all"
+                        title="Remove subject"
+                        >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                        </button>
+                    </div>
+                    ))}
+                </div>
+
+                <div className="flex gap-2">
+                    <button onClick={addSubject} className={neonButtonClass("flex-1 bg-gradient-to-r from-[#A855F7] to-[#EC4899] text-white")}>+ Add Subject</button>
+                    <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate</button>
+                </div>
+
+                {/* Save / load */}
+                <div className="pt-5 border-t border-purple-900/50 space-y-3">
+                    <input
+                    type="text"
+                    placeholder="Timetable name (required to save)"
+                    value={timetableName}
+                    onChange={(e) => setTimetableName(e.target.value)}
+                    className="w-full bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff] focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]"
+                    />
+
+                    <div className="flex gap-2">
+                    <button
+                        onClick={saveTimetable}
+                        className={neonButtonClass("flex-1 bg-gradient-to-r from-[#7c3aed] to-[#a855f7] text-white")}
+                        disabled={loadingSave}
+                    >
+                        {selectedTimetableId ? "Update" : "Save New"}
+                    </button>
+
+                    <button onClick={exportToPDF} className={neonButtonClass("bg-yellow-500 hover:bg-yellow-600 text-black")}>Export PDF</button>
+                    </div>
+
+                    {user && (
+                    <div className="mt-2">
+                        <label className="text-sm text-[#d3c6ef] block mb-1">Load or Delete Saved Timetables</label>
+                        <div className="flex gap-2 mt-1">
+                        <select
+                            value={selectedTimetableId}
+                            onChange={(e) => { if (e.target.value) loadTimetable(e.target.value); }}
+                            className="flex-1 bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff]"
+                        >
+                            <option value="">-- Load saved timetable --</option>
+                            {savedTimetables.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                        {selectedTimetableId && (
+                            <button onClick={() => deleteTimetable(selectedTimetableId)} className="px-3 py-2 rounded-lg bg-[#ef4444] hover:bg-[#dc2626] text-white">Delete</button>
+                        )}
+                        </div>
+                    </div>
+                    )}
+                </div>
+            </div>
+            
+            {/* Notes Section (NEW FEATURE) */}
+            <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-3">
+                <h3 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📝 Daily Notes</h3>
+                <textarea
+                    placeholder="Write down today's goals, thoughts, or reflections. (Saved with timetable)"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={6}
+                    className="w-full bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff] placeholder:text-[#b9a9d9] focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] resize-none"
                 />
-                <input
-                  type="number"
-                  placeholder="Hrs"
-                  min={0}
-                  value={s.hours}
-                  onChange={(e) => handleChange(i, "hours", e.target.value)}
-                  className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0 border-l border-purple-900/50"
-                  title="Total hours required per day"
-                />
-                {/* Priority Input (1-5) - ADDED */}
-                <input
-                  type="number"
-                  placeholder="Prio (1-5)"
-                  min={1}
-                  max={5}
-                  value={s.priority}
-                  onChange={(e) => handleChange(i, "priority", e.target.value)}
-                  className="w-20 bg-transparent py-1 text-sm text-center text-yellow-300 placeholder:text-yellow-600 focus:outline-none focus:ring-0 border-l border-purple-900/50"
-                  title="Priority: 5 is highest, 1 is lowest. Influences scheduling order."
-                />
-                <button
-                  onClick={() => setSubjects(prev => prev.filter((_, idx) => idx !== i))}
-                  className="p-1.5 rounded-full text-red-400 hover:text-red-300 bg-red-900/50 hover:bg-red-800/70 transition-all"
-                  title="Remove subject"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <button onClick={addSubject} className={neonButtonClass("flex-1 bg-gradient-to-r from-[#A855F7] to-[#EC4899] text-white")}>+ Add Subject</button>
-            <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate</button>
-          </div>
-
-          {/* Save / load */}
-          <div className="pt-5 border-t border-purple-900/50 space-y-3">
-            <input
-              type="text"
-              placeholder="Timetable name (required to save)"
-              value={timetableName}
-              onChange={(e) => setTimetableName(e.target.value)}
-              className="w-full bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff] focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]"
-            />
-
-            <div className="flex gap-2">
-              <button
-                onClick={saveTimetable}
-                className={neonButtonClass("flex-1 bg-gradient-to-r from-[#7c3aed] to-[#a855f7] text-white")}
-                disabled={loadingSave}
-              >
-                {selectedTimetableId ? "Update" : "Save New"}
-              </button>
-
-              <button onClick={exportToPDF} className={neonButtonClass("bg-yellow-500 hover:bg-yellow-600 text-black")}>Export PDF</button>
             </div>
 
-            {user && (
-              <div className="mt-2">
-                <label className="text-sm text-[#d3c6ef] block mb-1">Load or Delete Saved Timetables</label>
-                <div className="flex gap-2 mt-1">
-                  <select
-                    value={selectedTimetableId}
-                    onChange={(e) => { if (e.target.value) loadTimetable(e.target.value); }}
-                    className="flex-1 bg-[#0e0620] border border-[#2b173d] px-3 py-2 rounded-lg text-sm text-[#efe7ff]"
-                  >
-                    <option value="">-- Load saved timetable --</option>
-                    {savedTimetables.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  {selectedTimetableId && (
-                    <button onClick={() => deleteTimetable(selectedTimetableId)} className="px-3 py-2 rounded-lg bg-[#ef4444] hover:bg-[#dc2626] text-white">Delete</button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="pt-3 border-t border-black/30 text-xs text-[#d3c6ef] space-y-1">
-            <p className="font-bold">Tips:</p>
-            <ul className="list-disc ml-4">
-              <li>Timetables are randomly generated each time you click **Generate**.</li>
-              <li>**Priority** (1-5) influences the scheduling order.</li>
-              <li>Namaz slots are protected and cannot be edited.</li>
-              <li>Use the dropdowns to manually fine-tune your schedule.</li>
-            </ul>
-          </div>
+            {/* Tips Section */}
+            <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-3 text-xs text-[#d3c6ef]">
+                <p className="font-bold">Tips:</p>
+                <ul className="list-disc ml-4 space-y-1">
+                    <li>Timetables are randomly generated each time you click **Generate**.</li>
+                    <li>**Priority** (1-5) influences the scheduling order (5 is highest).</li>
+                    <li>Use the checkmark on each slot to mark it as **Completed**.</li>
+                    <li>Namaz slots are protected and cannot be edited.</li>
+                </ul>
+            </div>
         </section>
 
-        {/* RIGHT: Analytics and Timetable */}
+        {/* RIGHT: Pomodoro, Analytics and Timetable */}
         <section className="lg:col-span-2 space-y-6">
             
+          <PomodoroTimer neonButtonClass={neonButtonClass} />
           <StudyAnalyticsPanel />
 
           <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 shadow-2xl">
@@ -587,7 +690,7 @@ export default function Home() {
                       className={slotClasses}
                       style={slotStyles}
                     >
-                      {/* Completion Toggle (NEW) */}
+                      {/* Completion Toggle (RE-ADDED) */}
                       {!isNamaz && !isFree && (
                         <button
                           onClick={() => toggleCompletion(i)}
