@@ -47,14 +47,14 @@ const SimpleDropdown: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-[100] w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-xl max-h-60 overflow-y-auto">
           {options.map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => handleSelect(option)}
-              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800/50 transition-colors ${
-                option === value ? 'bg-purple-700/50' : ''
+              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800 transition-colors border-b border-purple-900/30 last:border-b-0 ${
+                option === value ? 'bg-purple-700' : ''
               }`}
             >
               {option}
@@ -138,7 +138,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
             {!isNamaz && !isFree && (
                 <button
                     onClick={() => toggleCompletion(index)}
-                    className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all ${
+                    className={`absolute top-2 right-2 p-1 rounded-full completion-toggle transition-all z-10 ${
                         slot.isCompleted 
                             ? 'bg-green-500 text-white shadow-lg shadow-green-700/50' 
                             : 'bg-black/50 text-gray-400 hover:bg-black/70 hover:text-white'
@@ -172,7 +172,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
             {/* Drag Handle Icon */}
             {!isNamaz && (
                 <div 
-                    className="absolute bottom-2 right-2 text-gray-400/60 hover:text-gray-300 transition-colors cursor-grab active:cursor-grabbing"
+                    className="absolute bottom-2 right-2 text-gray-400/60 hover:text-gray-300 transition-colors cursor-grab active:cursor-grabbing z-10"
                     title="Drag to reorder"
                     {...(!isNamaz && { ...attributes, ...listeners })}
                 >
@@ -184,9 +184,9 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
 
             {/* Completion Status Badge */}
             {!isNamaz && !isFree && slot.isCompleted && (
-                <div className="absolute top-2 left-2">
+                <div className="absolute top-2 left-2 z-10">
                     <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                        <svg xmlns="http://www.w3.org2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         Done

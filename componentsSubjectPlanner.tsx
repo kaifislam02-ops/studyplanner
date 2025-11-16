@@ -45,11 +45,11 @@ const SubjectDropdown: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-[100] w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-xl max-h-60 overflow-y-auto">
           <button
             type="button"
             onClick={() => handleSelect("")}
-            className="w-full px-3 py-2 text-left text-gray-400 hover:bg-purple-800/50 transition-colors"
+            className="w-full px-3 py-2 text-left text-gray-400 hover:bg-purple-800 transition-colors border-b border-purple-900/30"
           >
             {placeholder}
           </button>
@@ -58,8 +58,8 @@ const SubjectDropdown: React.FC<{
               key={option}
               type="button"
               onClick={() => handleSelect(option)}
-              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800/50 transition-colors ${
-                option === value ? 'bg-purple-700/50' : ''
+              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800 transition-colors border-b border-purple-900/30 last:border-b-0 ${
+                option === value ? 'bg-purple-700' : ''
               }`}
             >
               {option}
@@ -121,14 +121,14 @@ const PriorityDropdown: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg">
+        <div className="absolute z-[100] w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-xl">
           {priorities.map((priority) => (
             <button
               key={priority.value}
               type="button"
               onClick={() => handleSelect(priority.value)}
-              className={`w-full px-3 py-2 text-left ${priority.color} hover:bg-purple-800/50 transition-colors ${
-                priority.value === value ? 'bg-purple-700/50' : ''
+              className={`w-full px-3 py-2 text-left ${priority.color} hover:bg-purple-800 transition-colors border-b border-purple-900/30 last:border-b-0 ${
+                priority.value === value ? 'bg-purple-700' : ''
               }`}
             >
               {priority.label}
