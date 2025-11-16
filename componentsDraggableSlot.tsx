@@ -95,25 +95,27 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                     <select
                         value={item}
                         onChange={(e) => updateSlotSubject(index, e.target.value)}
-                        className={`w-full ${
-                            isFree 
-                                ? 'bg-[#0a0420] border border-[#3d1b5c] text-gray-300' 
-                                : 'bg-[#0a0420] border border-purple-700/50 text-white'
-                        } px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] focus:border-[#9b6cf0] edit-select hover:bg-[#0f062a] transition-colors cursor-pointer`}
-                        style={{ color: 'white' }}
+                        className={`w-full bg-[#0a0420] border border-purple-700/50 text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] focus:border-[#9b6cf0] edit-select hover:bg-[#0f062a] transition-colors cursor-pointer`}
                     >
-                        <option value="Free" style={{ backgroundColor: '#0a0420', color: 'white' }}>🕊️ Free Time</option>
+                        <option value="Free" className="bg-[#0a0420] text-white">🕊️ Free Time</option>
                         {COMMON_SUBJECTS.map(s => (
-                            <option key={s} value={s} style={{ backgroundColor: '#0a0420', color: 'white' }}>
+                            <option key={s} value={s} className="bg-[#0a0420] text-white">
                                 {s}
                             </option>
                         ))}
                         {subjects.filter(s => s.name.trim() !== "").map(s => (
-                            <option key={s.name} value={s.name} style={{ backgroundColor: '#0a0420', color: 'white' }}>
+                            <option key={s.name} value={s.name} className="bg-[#0a0420] text-white">
                                 {s.name}
                             </option>
                         ))}
                     </select>
+                    
+                    {/* Custom dropdown arrow */}
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
                 </div>
             )}
             
