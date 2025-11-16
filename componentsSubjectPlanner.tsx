@@ -36,7 +36,7 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                             value={sub.name}
                             onChange={(e) => handleChange(i, "name", e.target.value)}
                             className="w-full bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
-                            style={{ color: 'white' }}
+                            style={{ color: 'white !important' }}
                         >
                             <option value="" style={{ backgroundColor: '#0a0420', color: 'white' }}>Select Subject</option>
                             {COMMON_SUBJECTS.map(s => (
@@ -65,7 +65,7 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                             value={sub.priority}
                             onChange={(e) => handleChange(i, "priority", e.target.value)}
                             className="w-24 bg-[#0a0420] border border-purple-700/50 focus:border-[#A855F7] text-sm p-2 rounded-lg outline-none text-white appearance-none hover:bg-[#0f062a] transition-colors"
-                            style={{ color: 'white' }}
+                            style={{ color: 'white !important' }}
                         >
                             <option value="3" style={{ backgroundColor: '#0a0420', color: '#10B981' }}>🔥 High</option>
                             <option value="2" style={{ backgroundColor: '#0a0420', color: '#FBBF24' }}>⚡ Medium</option>
@@ -91,7 +91,7 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     onClick={addSubject} 
                     className={neonButtonClass("flex-1 bg-purple-800 hover:bg-purple-700 text-white flex items-center justify-center gap-2")}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
                     Add Subject
