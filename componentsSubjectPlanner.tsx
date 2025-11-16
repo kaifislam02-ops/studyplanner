@@ -33,13 +33,13 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     <select
                         value={sub.name}
                         onChange={(e) => handleChange(i, "name", e.target.value)}
-                        // Aesthetics Fix: Force dark background on select
-                        className="flex-1 bg-[#0f0420] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
+                        // FIX: Force deep black background on select
+                        className="flex-1 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
-                        {/* Aesthetics Fix: Force dark background on options */}
-                        <option value="" className="bg-[#0f0420] text-gray-400">Select Subject</option>
-                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420] text-white">{s}</option>)}
-                        <option value={sub.name} disabled className="bg-[#0f0420] text-gray-500">--- Custom ---</option>
+                        {/* FIX: Force deep black background on options */}
+                        <option value="" className="bg-[#030008] text-gray-400">Select Subject</option>
+                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#030008] text-white">{s}</option>)}
+                        <option value={sub.name} disabled className="bg-[#030008] text-gray-500">--- Custom ---</option>
                     </select>
                     
                     {/* Hours Input */}
@@ -48,8 +48,8 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                         placeholder="Hrs/Day"
                         value={sub.hours}
                         onChange={(e) => handleChange(i, "hours", e.target.value)}
-                        // Aesthetics Fix: Force dark background on input
-                        className="w-16 bg-[#0f0420] text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white placeholder-gray-400"
+                        // FIX: Force deep black background on input
+                        className="w-16 bg-[#030008] text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white placeholder-gray-400"
                         min="0"
                     />
                     
@@ -57,13 +57,13 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     <select
                         value={sub.priority}
                         onChange={(e) => handleChange(i, "priority", e.target.value)}
-                        // Aesthetics Fix: Force dark background on select
-                        className="w-20 bg-[#0f0420] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
+                        // FIX: Force deep black background on select
+                        className="w-20 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
-                        {/* Aesthetics Fix: Force dark background on options */}
-                        <option value="3" className="bg-[#0f0420] text-white">High</option>
-                        <option value="2" className="bg-[#0f0420] text-white">Medium</option>
-                        <option value="1" className="bg-[#0f0420] text-white">Low</option>
+                        {/* FIX: Force deep black background on options */}
+                        <option value="3" className="bg-[#030008] text-white">High</option>
+                        <option value="2" className="bg-[#030008] text-white">Medium</option>
+                        <option value="1" className="bg-[#030008] text-white">Low</option>
                     </select>
                     
                     {/* Remove Button */}
