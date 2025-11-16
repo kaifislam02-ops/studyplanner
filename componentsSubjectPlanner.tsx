@@ -1,5 +1,144 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Subject } from '@/app/page';
+
+// Simple Dropdown for Subject Planner
+const SubjectDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+}> = ({ value, onChange, options, placeholder = "Select..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (option: string) => {
+    onChange(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative flex-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-[#0a0420] border border-purple-700/50 text-white text-sm p-2 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] hover:bg-[#0f062a] transition-colors flex justify-between items-center"
+      >
+        <span className="truncate">{value || placeholder}</span>
+        <svg 
+          className={`w-4 h-4 text-purple-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => handleSelect("")}
+            className="w-full px-3 py-2 text-left text-gray-400 hover:bg-purple-800/50 transition-colors"
+          >
+            {placeholder}
+          </button>
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => handleSelect(option)}
+              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800/50 transition-colors ${
+                option === value ? 'bg-purple-700/50' : ''
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Priority Dropdown
+const PriorityDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+}> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const priorities = [
+    { value: "3", label: "🔥 High", color: "text-green-400" },
+    { value: "2", label: "⚡ Medium", color: "text-yellow-400" },
+    { value: "1", label: "💧 Low", color: "text-blue-400" }
+  ];
+
+  const currentPriority = priorities.find(p => p.value === value) || priorities[0];
+
+  const handleSelect = (priorityValue: string) => {
+    onChange(priorityValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-24 bg-[#0a0420] border border-purple-700/50 text-white text-sm p-2 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] hover:bg-[#0f062a] transition-colors flex justify-between items-center"
+      >
+        <span className={currentPriority.color}>{currentPriority.label.split(' ')[1]}</span>
+        <svg 
+          className={`w-4 h-4 text-purple-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg">
+          {priorities.map((priority) => (
+            <button
+              key={priority.value}
+              type="button"
+              onClick={() => handleSelect(priority.value)}
+              className={`w-full px-3 py-2 text-left ${priority.color} hover:bg-purple-800/50 transition-colors ${
+                priority.value === value ? 'bg-purple-700/50' : ''
+              }`}
+            >
+              {priority.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface SubjectPlannerProps {
     subjects: Subject[];
@@ -30,26 +169,13 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
             {subjects.map((sub, i) => (
                 <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
                     
-                    {/* Name Input/Select */}
-                    <div className="flex-1 relative">
-                        <select
-                            value={sub.name}
-                            onChange={(e) => handleChange(i, "name", e.target.value)}
-                            className="w-full bg-[#0a0420] border border-purple-700/50 text-white text-sm p-2 rounded-lg outline-none appearance-none hover:bg-[#0f062a] transition-colors"
-                        >
-                            <option value="" className="bg-[#0a0420] text-white">Select Subject</option>
-                            {COMMON_SUBJECTS.map(s => (
-                                <option key={s} value={s} className="bg-[#0a0420] text-white">
-                                    {s}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
+                    {/* Name Dropdown */}
+                    <SubjectDropdown
+                        value={sub.name}
+                        onChange={(value) => handleChange(i, "name", value)}
+                        options={COMMON_SUBJECTS}
+                        placeholder="Select Subject"
+                    />
                     
                     {/* Hours Input */}
                     <input
@@ -62,23 +188,11 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                         max="24"
                     />
                     
-                    {/* Priority Select */}
-                    <div className="relative">
-                        <select
-                            value={sub.priority}
-                            onChange={(e) => handleChange(i, "priority", e.target.value)}
-                            className="w-24 bg-[#0a0420] border border-purple-700/50 text-white text-sm p-2 rounded-lg outline-none appearance-none hover:bg-[#0f062a] transition-colors"
-                        >
-                            <option value="3" className="bg-[#0a0420] text-green-400">🔥 High</option>
-                            <option value="2" className="bg-[#0a0420] text-yellow-400">⚡ Medium</option>
-                            <option value="1" className="bg-[#0a0420] text-blue-400">💧 Low</option>
-                        </select>
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
+                    {/* Priority Dropdown */}
+                    <PriorityDropdown
+                        value={sub.priority}
+                        onChange={(value) => handleChange(i, "priority", value)}
+                    />
                     
                     {/* Remove Button */}
                     <button 

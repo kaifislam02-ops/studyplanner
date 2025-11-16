@@ -1,7 +1,70 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Subject, TimetableSlot } from '@/app/page';
+
+// Simple Custom Dropdown Component (built-in to avoid imports)
+const SimpleDropdown: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+}> = ({ value, onChange, options, placeholder = "Select..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (option: string) => {
+    onChange(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-[#0a0420] border border-purple-700/50 text-white px-3 py-2 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] hover:bg-[#0f062a] transition-colors flex justify-between items-center"
+      >
+        <span className="truncate">{value || placeholder}</span>
+        <svg 
+          className={`w-4 h-4 text-purple-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-[#0a0420] border border-purple-700/50 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => handleSelect(option)}
+              className={`w-full px-3 py-2 text-left text-white hover:bg-purple-800/50 transition-colors ${
+                option === value ? 'bg-purple-700/50' : ''
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface DraggableSlotProps {
     slot: TimetableSlot;
@@ -57,6 +120,13 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
 
     const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
 
+    // Prepare dropdown options
+    const dropdownOptions = [
+        'Free',
+        ...COMMON_SUBJECTS,
+        ...subjects.filter(s => s.name.trim() !== "").map(s => s.name)
+    ];
+
     return (
         <div
             ref={setNodeRef}
@@ -91,32 +161,12 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                     {item.split(' ')[1]}
                 </div>
             ) : (
-                <div className="relative">
-                    <select
-                        value={item}
-                        onChange={(e) => updateSlotSubject(index, e.target.value)}
-                        className="w-full bg-[#0a0420] border border-purple-700/50 text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] focus:border-[#9b6cf0] edit-select hover:bg-[#0f062a] transition-colors cursor-pointer"
-                    >
-                        <option value="Free" className="bg-[#0a0420] text-white">🕊️ Free Time</option>
-                        {COMMON_SUBJECTS.map(s => (
-                            <option key={s} value={s} className="bg-[#0a0420] text-white">
-                                {s}
-                            </option>
-                        ))}
-                        {subjects.filter(s => s.name.trim() !== "").map(s => (
-                            <option key={s.name} value={s.name} className="bg-[#0a0420] text-white">
-                                {s.name}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    {/* Custom dropdown arrow */}
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                </div>
+                <SimpleDropdown
+                    value={item}
+                    onChange={(newValue) => updateSlotSubject(index, newValue)}
+                    options={dropdownOptions}
+                    placeholder="🕊️ Free Time"
+                />
             )}
             
             {/* Drag Handle Icon */}
@@ -136,7 +186,7 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
             {!isNamaz && !isFree && slot.isCompleted && (
                 <div className="absolute top-2 left-2">
                     <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         Done
