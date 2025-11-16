@@ -37,6 +37,9 @@ const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 // The number of available slots per day for study (Total slots - Namaz slots)
 const TOTAL_DAILY_STUDY_SLOTS = DAY_HOURS.length - NAMAZ_SLOTS.length; // 20 - 5 = 15
 
+// NEW CONSTRAINT: Maximum consecutive slots for the same subject
+const MAX_CONSECUTIVE_SLOTS = 3;
+
 // Colors for subjects (used for small legend chips)
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
@@ -57,7 +60,7 @@ type WeeklyTimetable = { [key: string]: TimetableSlot[] };
 const shuffleArray = (array: any[]) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [array[i], array[j]] = [array[i], array[j]];
   }
   return array;
 };
@@ -322,7 +325,7 @@ export default function Home() {
   const [loadingSave, setLoadingSave] = useState(false);
   const [notes, setNotes] = useState<string>(""); 
   
-  // --- NEW: Calculate required vs available hours ---
+  // Calculate required vs available hours
   const { totalRequestedHours, maxPossibleDailyHours } = useMemo(() => {
     const hours = subjects.reduce((sum, s) => {
       const hrs = parseInt(s.hours || "0");
@@ -334,7 +337,6 @@ export default function Home() {
         maxPossibleDailyHours: TOTAL_DAILY_STUDY_SLOTS // 15
     };
   }, [subjects]);
-  // --- END: NEW useMemo ---
 
 
   // Google Sign-In & Auth
@@ -406,7 +408,7 @@ export default function Home() {
     });
   }
 
-  // CORE LOGIC: Generates a single day's timetable
+  // CORE LOGIC: Generates a single day's timetable (MODIFIED FOR CONSECUTIVE LIMIT)
   const generateDailyTimetable = useCallback((): TimetableSlot[] => {
     const dailyGrid: TimetableSlot[] = [];
     
@@ -429,24 +431,66 @@ export default function Home() {
     // 3. Shuffle the entire queue
     subjectQueue = shuffleArray(subjectQueue);
 
+    let consecutiveCount = 0;
+    let currentSubject = "";
+    
     DAY_HOURS.forEach(h => {
       const namaz = NAMAZ_SLOTS.find(n => n.time === h);
-      const subjectName = namaz ? `🔔 ${namaz.name}` : (subjectQueue.shift() || "Free");
+      
+      if (namaz) {
+          // If it's Namaz, reset consecutive count
+          dailyGrid.push({ subject: `🔔 ${namaz.name}`, isNamaz: true, isCompleted: false, hour: h });
+          currentSubject = "";
+          consecutiveCount = 0;
+          return;
+      }
+
+      let subjectName = "";
+      let foundSlot = false;
+      
+      // Look through the subject queue for the next slot
+      for (let i = 0; i < subjectQueue.length; i++) {
+        const nextSubject = subjectQueue[i];
+        
+        // Check for consecutive limit
+        if (nextSubject === currentSubject && consecutiveCount >= MAX_CONSECUTIVE_SLOTS) {
+            continue; // Skip this subject for now, try the next one in the queue
+        }
+        
+        // Found a valid subject (or a free slot will be assigned if loop finishes)
+        subjectName = nextSubject;
+        subjectQueue.splice(i, 1); // Remove from queue
+        foundSlot = true;
+        break;
+      }
+      
+      if (!foundSlot) {
+          subjectName = "Free";
+      }
+
+      // Update tracking state for the next hour
+      if (subjectName === currentSubject) {
+          consecutiveCount++;
+      } else {
+          currentSubject = subjectName;
+          consecutiveCount = subjectName === "Free" ? 0 : 1; // Reset to 1 if new subject, or 0 if Free
+      }
 
       dailyGrid.push({ 
           subject: subjectName, 
-          isNamaz: !!namaz, 
+          isNamaz: false, 
           isCompleted: false, 
           hour: h 
       });
     });
+    
     return dailyGrid;
   }, [subjects]); 
 
-  // MODIFIED: Function to generate the entire weekly timetable with checks
+  // Function to generate the entire weekly timetable with checks
   const generateWeeklyTimetable = () => {
     
-    // --- NEW CHECK LOGIC ---
+    // --- CHECK LOGIC ---
     if (totalRequestedHours === 0) {
         alert("Please define at least one subject with study hours before generating the timetable.");
         return;
@@ -463,7 +507,7 @@ export default function Home() {
         );
         if (!confirmLow) return;
     }
-    // --- END NEW CHECK LOGIC ---
+    // --- END CHECK LOGIC ---
 
     const newWeeklyTimetable: WeeklyTimetable = {};
     WEEK_DAYS.forEach(day => {
@@ -805,10 +849,13 @@ export default function Home() {
                     ))}
                 </div>
                 
-                {/* NEW: Planning Feedback */}
+                {/* Planning Feedback */}
                 <div className="text-xs p-3 rounded-lg bg-[#140426] border border-[#2b173d]">
                     <p className="text-[#d3c6ef]">
                         Total daily hours requested: <strong className={totalRequestedHours > maxPossibleDailyHours ? 'text-red-400' : 'text-green-400'}>{totalRequestedHours}</strong> / {maxPossibleDailyHours} available slots (after Namaz).
+                    </p>
+                    <p className="text-yellow-400 mt-1">
+                        *Scheduling enforced: Max {MAX_CONSECUTIVE_SLOTS} consecutive hours per subject.
                     </p>
                 </div>
 
