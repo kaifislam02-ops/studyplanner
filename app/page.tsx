@@ -26,12 +26,12 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 
-// --- Component Imports (FIXED PATHS) ---
-// The paths are corrected based on the Vercel error logs, assuming the files
-// are located in the parent directory (../) and named without the slash.
-import { StudyAnalyticsPanel } from "../componentsStudyAnalyticsPanel";
-import { SubjectPlanner } from "../componentsSubjectPlanner";
-import { DraggableSlot } from "../componentsDraggableSlot";
+// --- Component Imports (REVERTED TO CORRECT ALIAS) ---
+// We assume the component files are now correctly located in the /components folder 
+// and named correctly (e.g., StudyAnalyticsPanel.tsx).
+import { StudyAnalyticsPanel } from "@/components/StudyAnalyticsPanel";
+import { SubjectPlanner } from "@/components/SubjectPlanner";
+import { DraggableSlot } from "@/components/DraggableSlot";
 
 
 // --- CONSTANTS ---
