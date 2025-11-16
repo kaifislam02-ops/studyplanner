@@ -237,9 +237,9 @@ export default function Home() {
     for (let day = 0; day < DAYS_OF_WEEK; day++) {
         const dailyGrid: string[] = [];
         DAY_HOURS.forEach(h => {
-            const namaz = NAMAZ_SLOTS.find(n => n.time === h);
-            if (namaz) dailyGrid.push(`🔔 ${namaz.name} (${formatHour(h)})`);
-            else dailyGrid.push(subjectQueue.shift() || "Free"); // Fill from the queue
+          const namaz = NAMAZ_SLOTS.find(n => n.time === h);
+          if (namaz) dailyGrid.push(`🔔 ${namaz.name} (${formatHour(h)})`);
+          else dailyGrid.push(subjectQueue.shift() || "Free"); // Fill from the queue
         });
         weeklyGrid.push(dailyGrid);
     }
@@ -640,4 +640,28 @@ export default function Home() {
           </div>
 
           {/* Quick legend / colors */}
-          <div className="bg-black/40 border border-purple-900/40 rounded-
+          <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-lg">
+            <div className="flex gap-3 flex-wrap">
+              <span className="text-sm font-semibold text-[#efe7ff]">Key:</span>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-3 h-3 rounded-full bg-[#06b6d4]" />
+                <div className="text-[#efe7ff]">Namaz Slot</div>
+              </div>
+              {COMMON_SUBJECTS.slice(0,6).map((s,idx) => (
+                <div key={s} className="flex items-center gap-2 text-sm">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                  <div className="text-[#efe7ff]">{s}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* FOOTER */}
+      <footer className="max-w-6xl mx-auto mt-8 text-center text-sm text-[#bfb0f7]">
+        Made with ❤️ • StudyPlanner — Purple Galaxy
+      </footer>
+    </div>
+  );
+}
