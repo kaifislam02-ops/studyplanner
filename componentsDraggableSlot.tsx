@@ -2,6 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Subject, TimetableSlot } from '@/app/page';
+import { CustomDropdown } from './CustomDropdown'; // Add this import
 
 interface DraggableSlotProps {
     slot: TimetableSlot;
@@ -57,6 +58,13 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
 
     const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
 
+    // Prepare dropdown options
+    const dropdownOptions = [
+        'Free',
+        ...COMMON_SUBJECTS,
+        ...subjects.filter(s => s.name.trim() !== "").map(s => s.name)
+    ];
+
     return (
         <div
             ref={setNodeRef}
@@ -91,32 +99,13 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                     {item.split(' ')[1]}
                 </div>
             ) : (
-                <div className="relative">
-                    <select
-                        value={item}
-                        onChange={(e) => updateSlotSubject(index, e.target.value)}
-                        className={`w-full bg-[#0a0420] border border-purple-700/50 text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] focus:border-[#9b6cf0] edit-select hover:bg-[#0f062a] transition-colors cursor-pointer`}
-                    >
-                        <option value="Free" className="bg-[#0a0420] text-white">🕊️ Free Time</option>
-                        {COMMON_SUBJECTS.map(s => (
-                            <option key={s} value={s} className="bg-[#0a0420] text-white">
-                                {s}
-                            </option>
-                        ))}
-                        {subjects.filter(s => s.name.trim() !== "").map(s => (
-                            <option key={s.name} value={s.name} className="bg-[#0a0420] text-white">
-                                {s.name}
-                            </option>
-                        ))}
-                    </select>
-                    
-                    {/* Custom dropdown arrow */}
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                </div>
+                <CustomDropdown
+                    value={item}
+                    onChange={(newValue) => updateSlotSubject(index, newValue)}
+                    options={dropdownOptions}
+                    placeholder="🕊️ Free Time"
+                    className="w-full"
+                />
             )}
             
             {/* Drag Handle Icon */}
