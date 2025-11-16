@@ -92,13 +92,12 @@ export const DraggableSlot: React.FC<DraggableSlotProps> = ({
                 <select
                     value={item}
                     onChange={(e) => updateSlotSubject(index, e.target.value)}
-                    // FIX: Applied `appearance-none` to allow full custom styling,
-                    // and explicitly set dark background for options for consistency.
                     className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-black/50 border border-white/20'} text-white px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0] edit-select`}
                 >
-                    <option value="Free" className="bg-[#0f0420] text-white">Free</option> {/* Explicit dark background */}
-                    {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420] text-white">{s}</option>)} {/* Explicit dark background */}
-                    {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#0f0420] text-white">{s}</option>)} {/* Explicit dark background */}
+                    <option value="Free" className="bg-[#0f0420] text-white">Free</option>
+                    {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420] text-white">{s}</option>)}
+                    {/* FIX APPLIED HERE: Changed {s} to {s.name} */}
+                    {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#0f0420] text-white">{s.name}</option>)}
                 </select>
             )}
             
