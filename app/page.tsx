@@ -144,7 +144,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
   
-  // 🟢 NEW: Timetable is now a 2D array [day][hour]
+  // 🟢 Timetable is now a 2D array [day][hour]
   const [timetable, setTimetable] = useState<string[][]>([]); 
   
   const [timetableName, setTimetableName] = useState("");
@@ -155,7 +155,7 @@ export default function Home() {
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // 🟢 NEW: State for view mode and selected day
+  // 🟢 State for view mode and selected day
   const [viewMode, setViewMode] = useState<'Daily' | 'Weekly'>('Daily');
   // Index 0 for Mon, 1 for Tue... 6 for Sun
   const [selectedDayIndex, setSelectedDayIndex] = useState(0); 
@@ -165,7 +165,6 @@ export default function Home() {
   // --- START: Firebase and Utility Functions (Inside Home) ---
 
   const login = async () => {
-    // ... login logic ...
     try {
       const result = await signInWithPopup(auth, provider);
       setUser(result.user);
@@ -177,7 +176,6 @@ export default function Home() {
   };
 
   const logout = async () => {
-    // ... logout logic ...
     try { await signOut(auth); } catch (e) { console.error(e); }
     setUser(null);
     setSubjects([{ name: "", hours: "", priority: "3" }]);
@@ -559,7 +557,7 @@ export default function Home() {
             <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your {viewMode} Schedule</h3>
 
             {/* NEW: Weekly Tabs */}
-            {(viewMode === 'Weekly' && timetable.length > 0) && (
+            {(viewMode === 'Weekly' && timetable.length === 7) && ( // Check for 7 days
                 <div className="flex flex-wrap gap-2 mb-4 p-2 bg-[#080415] rounded-xl border border-[#2b173d]">
                     {DAYS_MAP.map((day, index) => (
                         <button
@@ -618,9 +616,9 @@ export default function Home() {
                                             onChange={(e) => {
                                                 const newTT = [...timetable];
                                                 // Update the specific hour for the selected day
-                                                if(viewMode === 'Weekly'){
+                                                if(viewMode === 'Weekly' && newTT[selectedDayIndex]){
                                                     newTT[selectedDayIndex][i] = e.target.value;
-                                                } else {
+                                                } else if (newTT[0]){
                                                     newTT[0][i] = e.target.value;
                                                 }
                                                 setTimetable(newTT);
@@ -642,28 +640,4 @@ export default function Home() {
           </div>
 
           {/* Quick legend / colors */}
-          <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-lg">
-            <div className="flex gap-3 flex-wrap">
-              <span className="text-sm font-semibold text-[#efe7ff]">Key:</span>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-3 h-3 rounded-full bg-[#06b6d4]" />
-                <div className="text-[#efe7ff]">Namaz Slot</div>
-              </div>
-              {COMMON_SUBJECTS.slice(0,6).map((s,idx) => (
-                <div key={s} className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                  <div className="text-[#efe7ff]">{s}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="max-w-6xl mx-auto mt-8 text-center text-sm text-[#bfb0f7]">
-        Made with ❤️ • StudyPlanner — Purple Galaxy
-      </footer>
-    </div>
-  );
-}
+          <div className="bg-black/40 border border-purple-900/40 rounded-
