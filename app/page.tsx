@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react"; // ADDED useMemo for cleaner code
+import { useState, useEffect, useRef, useMemo } from "react";
 import { db, auth, provider } from "../firebaseConfig";
 import { signInWithPopup, signOut, User } from "firebase/auth";
 import {
@@ -29,13 +29,13 @@ const NAMAZ_SLOTS = [
   { name: "Isha", time: 20 },
 ];
 
-// Hours of the day (4 AM to 11 PM)
+// Hours of the day (4 AM to 11 PM) - 20 slots
 const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 
 // Colors for subjects (used for small legend chips)
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
-// MODIFIED: Added priority field
+// Type for subject (retains priority)
 type Subject = { name: string; hours: string; priority: string };
 
 // --- Utility function for shuffling ---
@@ -58,7 +58,7 @@ const darkenColor = (color: string, percent: number) => {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
 };
 
-// --- NEW COMPONENT: Pomodoro Timer ---
+// --- Pomodoro Timer Component (Unchanged) ---
 const PomodoroTimer = () => {
   const STUDY_TIME = 25 * 60; // 25 minutes
   const BREAK_TIME = 5 * 60;  // 5 minutes
@@ -79,14 +79,10 @@ const PomodoroTimer = () => {
         setTime(prevTime => prevTime - 1);
       }, 1000);
     } else if (time === 0) {
-      // Time's up!
       setIsTimerActive(false);
-      // Automatically switch mode
       setIsStudyMode(prevMode => !prevMode);
       setTime(isStudyMode ? BREAK_TIME : STUDY_TIME);
-      // Use a subtle notification instead of alert
       console.log(`Time for ${isStudyMode ? 'Break' : 'Study'}!`);
-      // Optional: Play a sound
     }
 
     return () => {
@@ -146,22 +142,30 @@ const PomodoroTimer = () => {
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
-  // MODIFIED: Added priority field to initial state
   const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
-  const [timetable, setTimetable] = useState<string[]>([]);
+  
+  // 🟢 NEW: Timetable is now a 2D array [day][hour]
+  const [timetable, setTimetable] = useState<string[][]>([]); 
+  
   const [timetableName, setTimetableName] = useState("");
   const [savedTimetables, setSavedTimetables] = useState<{id:string,name:string}[]>([]);
   const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
-  // NEW: State for notes and UI mount effect
   const [notes, setNotes] = useState(""); 
   const [mounted, setMounted] = useState(false);
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // --- START: Firebase and Utility Functions (Now all inside Home) ---
+  // 🟢 NEW: State for view mode and selected day
+  const [viewMode, setViewMode] = useState<'Daily' | 'Weekly'>('Daily');
+  // Index 0 for Mon, 1 for Tue... 6 for Sun
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0); 
 
-  // Google Sign-In
+  const DAYS_MAP = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], []);
+
+  // --- START: Firebase and Utility Functions (Inside Home) ---
+
   const login = async () => {
+    // ... login logic ...
     try {
       const result = await signInWithPopup(auth, provider);
       setUser(result.user);
@@ -173,6 +177,7 @@ export default function Home() {
   };
 
   const logout = async () => {
+    // ... logout logic ...
     try { await signOut(auth); } catch (e) { console.error(e); }
     setUser(null);
     setSubjects([{ name: "", hours: "", priority: "3" }]);
@@ -184,8 +189,6 @@ export default function Home() {
 
   const addSubject = () => setSubjects(prev => [...prev, { name: "", hours: "", priority: "3" }]);
 
-  // Type-safe handler
-  // MODIFIED: Added priority to field type
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     const newSubjects = [...subjects];
     newSubjects[i][field] = value;
@@ -207,12 +210,11 @@ export default function Home() {
     return "#6B7280";
   };
 
-  // MODIFIED: Timetable generation logic now uses priority
+  // 🟢 MODIFIED: Timetable generation logic now creates a weekly schedule
   const generateTimetable = () => {
-    const grid: string[] = [];
-    let subjectQueue: string[] = [];
+    const weeklyGrid: string[][] = [];
     
-    // 1. Filter out empty subjects and sort by priority (descending: 5 first)
+    // 1. Filter and sort subjects by priority
     const validSubjects = subjects
         .filter(s => s.name && s.hours && s.priority)
         .sort((a, b) => {
@@ -221,24 +223,34 @@ export default function Home() {
           return pB - pA; // Descending sort (Highest priority first)
         });
 
-    // 2. Create the subject queue based on sorted priority
+    // 2. Total hours needed across the week
+    let subjectQueue: string[] = [];
     validSubjects.forEach(s => {
       const hrs = parseInt(s.hours || "0");
-      for (let i = 0; i < hrs; i++) subjectQueue.push(s.name);
+      // Distribute the total required hours across the whole week (7 days)
+      for (let i = 0; i < hrs * 7; i++) subjectQueue.push(s.name); 
     });
-
+    
     // 3. Shuffle the entire queue for randomness while maintaining priority bias
     subjectQueue = shuffleArray(subjectQueue);
 
-    DAY_HOURS.forEach(h => {
-      const namaz = NAMAZ_SLOTS.find(n => n.time === h);
-      if (namaz) grid.push(`🔔 ${namaz.name} (${formatHour(h)})`);
-      else grid.push(subjectQueue.shift() || "Free");
-    });
-
-    setTimetable(grid);
+    const DAYS_OF_WEEK = 7;
+    
+    for (let day = 0; day < DAYS_OF_WEEK; day++) {
+        const dailyGrid: string[] = [];
+        DAY_HOURS.forEach(h => {
+            const namaz = NAMAZ_SLOTS.find(n => n.time === h);
+            if (namaz) dailyGrid.push(`🔔 ${namaz.name} (${formatHour(h)})`);
+            else dailyGrid.push(subjectQueue.shift() || "Free"); // Fill from the queue
+        });
+        weeklyGrid.push(dailyGrid);
+    }
+    
+    setTimetable(weeklyGrid);
+    setViewMode('Weekly'); // Automatically switch to weekly view
   };
 
+  // 🟢 MODIFIED: saveTimetable now saves the 2D array
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -246,15 +258,14 @@ export default function Home() {
     try {
       if (selectedTimetableId) {
         const ref = doc(db, "timetables", selectedTimetableId);
-        // Subjects now includes priority field
-        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() });
+        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() }); // Saves 2D array
         alert("Timetable updated!");
       } else {
         await addDoc(collection(db, "timetables"), {
           uid: user.uid,
           name: timetableName.trim(),
-          subjects, // Subjects now includes priority field
-          timetable,
+          subjects,
+          timetable, // Saves 2D array
           createdAt: new Date()
         });
         alert("Timetable saved!");
@@ -279,8 +290,9 @@ export default function Home() {
       if (selectedTimetableId === id) {
         setSelectedTimetableId("");
         setTimetable([]);
-        setSubjects([{ name: "", hours: "", priority: "3" }]); // Reset subjects with priority
+        setSubjects([{ name: "", hours: "", priority: "3" }]);
         setTimetableName("");
+        setViewMode('Daily'); // Reset view
       }
       await loadAllTimetables(user.uid);
     } catch (e) {
@@ -301,26 +313,37 @@ export default function Home() {
     }
   };
 
+  // 🟢 MODIFIED: loadTimetable now handles both 1D (old) and 2D (new) arrays
   const loadTimetable = async (id: string) => {
     try {
-      // NOTE: Using getDocs on entire collection and then filtering by ID is inefficient.
-      // Better: const docRef = doc(db, "timetables", id); const docSnap = await getDoc(docRef);
-      // For now, keeping the original logic structure but with minor fix for missing fields.
-      const q = query(collection(db, "timetables"), where("__name__", "==", id)); // Correct way to query by ID
+      const q = query(collection(db, "timetables"), where("__name__", "==", id));
       const snap = await getDocs(q);
       
       snap.forEach(docSnap => {
         if (docSnap.id === id) {
           const data = docSnap.data();
-          // Ensure loaded subjects have a priority field, default to "3" if missing
+          
           const loadedSubjects = (data.subjects || [{ name: "", hours: "", priority: "3" }]).map((s:any) => ({
               name: s.name || "",
               hours: s.hours || "",
               priority: s.priority || "3" 
           }));
           
+          const loadedTimetable = data.timetable || [];
+
+          if (loadedTimetable.length > 0 && typeof loadedTimetable[0] === 'string') {
+             // Backward Compatibility: Old 1D array detected, wrap it for daily view
+             setTimetable([loadedTimetable]); 
+             setViewMode('Daily');
+             setSelectedDayIndex(0);
+          } else {
+             // New 2D array or empty
+             setTimetable(loadedTimetable);
+             setViewMode(loadedTimetable.length === 7 ? 'Weekly' : 'Daily'); // Assume Weekly if 7 days
+             setSelectedDayIndex(0);
+          }
+
           setSubjects(loadedSubjects);
-          setTimetable(data.timetable || []);
           setTimetableName(data.name || "");
           setSelectedTimetableId(id);
         }
@@ -355,20 +378,27 @@ export default function Home() {
   useEffect(() => {
     if (auth.currentUser) {
       setUser(auth.currentUser);
-      // ✅ loadAllTimetables is now correctly defined in scope
       loadAllTimetables(auth.currentUser.uid); 
     }
   }, []);
   
-  // NEW: Effect to trigger fade-in
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // --- Reusable button classes for a unified neon style ---
   const neonButtonClass = (color: string) =>
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
 
+
+  // Logic to determine which day's schedule to show
+  const currentDaySchedule = useMemo(() => {
+      if (timetable.length === 0) return [];
+      // If Weekly, use the selected day index. Otherwise, use the first (and only) day.
+      if (viewMode === 'Weekly' && selectedDayIndex < timetable.length) {
+          return timetable[selectedDayIndex];
+      }
+      return timetable[0] || [];
+  }, [timetable, viewMode, selectedDayIndex]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0211] via-[#0f0420] to-[#140426] text-slate-100 p-6">
@@ -401,7 +431,6 @@ export default function Home() {
       </header>
 
       {/* MAIN */}
-      {/* ADDED: Mounted state for a smoother UI appearance */}
       <main className={`max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         {/* LEFT: Controls */}
         <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl">
@@ -420,13 +449,14 @@ export default function Home() {
                 />
                 <input
                   type="number"
-                  placeholder="Hrs"
+                  placeholder="Hrs/Day" {/* Updated placeholder */}
                   min={0}
                   value={s.hours}
                   onChange={(e) => handleChange(i, "hours", e.target.value)}
                   className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0 border-l border-purple-900/50"
+                  title="Hours required per day on average"
                 />
-                {/* NEW: Priority Input (1-5) */}
+                {/* Priority Input (1-5) */}
                 <input
                   type="number"
                   placeholder="Prio (1-5)"
@@ -452,12 +482,11 @@ export default function Home() {
 
           <div className="flex gap-2">
             <button onClick={addSubject} className={neonButtonClass("flex-1 bg-gradient-to-r from-[#A855F7] to-[#EC4899] text-white")}>+ Add Subject</button>
-            <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate Timetable</button>
+            <button onClick={generateTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate Weekly Timetable</button>
           </div>
 
           {/* Save / load */}
           <div className="pt-5 border-t border-purple-900/50 space-y-3">
-            {/* ... Save/Load UI ... */}
             <input
               type="text"
               placeholder="Timetable name (required to save)"
@@ -498,7 +527,7 @@ export default function Home() {
             )}
           </div>
           
-          {/* NEW: Notes Section */}
+          {/* Notes Section */}
           <div className="pt-5 border-t border-purple-900/50 space-y-3">
             <h3 className="text-xl font-extrabold text-[#e9ddfa]">📝 Quick Notes</h3>
             <textarea
@@ -515,74 +544,100 @@ export default function Home() {
             <p className="font-bold">Tips:</p>
             <ul className="list-disc ml-4">
               <li>Timetables are now generated with a **priority bias** (5 is high).</li>
-              <li>Namaz slots are protected and cannot be edited.</li>
+              <li>Hours are now **weekly total** hours, distributed across 7 days.</li>
             </ul>
           </div>
         </section>
 
         {/* MIDDLE/RIGHT: Pomodoro and Timetable */}
         <section className="lg:col-span-2 space-y-6">
-          {/* NEW: Pomodoro Timer */}
+          {/* Pomodoro Timer */}
           <PomodoroTimer />
 
           {/* Timetable Display */}
           <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-4 shadow-2xl">
-            <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your Daily Schedule</h3>
+            <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your {viewMode} Schedule</h3>
+
+            {/* NEW: Weekly Tabs */}
+            {(viewMode === 'Weekly' && timetable.length > 0) && (
+                <div className="flex flex-wrap gap-2 mb-4 p-2 bg-[#080415] rounded-xl border border-[#2b173d]">
+                    {DAYS_MAP.map((day, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setSelectedDayIndex(index)}
+                            className={`px-3 py-1 text-sm font-semibold rounded-lg transition ${
+                                selectedDayIndex === index 
+                                    ? 'bg-purple-600 text-white shadow-xl shadow-purple-900/50' 
+                                    : 'bg-black/30 text-slate-300 hover:bg-black/50'
+                            }`}
+                        >
+                            {day}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             <div ref={timetableRef} className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {timetable.length === 0 ? (
-                  <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
-                    No timetable yet — add subjects and press <strong className="text-green-400 animate-pulse">Generate Timetable</strong>.
-                  </div>
-                ) : timetable.map((item, i) => {
-                  const isNamaz = NAMAZ_SLOTS.some(n => item.includes(n.name));
-                  const isFree = item === 'Free';
-                  const bg = isNamaz ? "#06b6d4" : getColor(item);
-                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); // Using helper function
-                    
-                  const slotStyles = isNamaz 
-                    ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
-                    : isFree
-                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-                    : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}` };
-                    
-                  const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
-                  
-                  return (
-                    <div
-                      key={i}
-                      className={slotClasses}
-                      style={slotStyles}
-                    >
-                      <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
-                        {DAY_HOURS[i] !== undefined ? formatHour(DAY_HOURS[i]) : ""}
-                      </div>
-
-                      {isNamaz ? (
-                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
-                          {item.split(' ')[1]}
-                        </div>
-                      ) : (
-                        <select
-                          value={item}
-                          onChange={(e) => {
-                            const newTT = [...timetable];
-                            newTT[i] = e.target.value;
-                            setTimetable(newTT);
-                          }}
-                          className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]`}
-                        >
-                          <option value="Free" className="bg-[#080216]">Free</option>
-                          {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
-                          {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
-                        </select>
-                      )}
-                      
+                {currentDaySchedule.length === 0 ? (
+                    <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
+                        No timetable yet — add subjects and press <strong className="text-green-400 animate-pulse">Generate Weekly Timetable</strong>.
                     </div>
-                  );
-                })}
-              </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {currentDaySchedule.map((item, i) => {
+                            const isNamaz = NAMAZ_SLOTS.some(n => item.includes(n.name));
+                            const isFree = item === 'Free';
+                            const bg = isNamaz ? "#06b6d4" : getColor(item);
+                            const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); 
+                                
+                            const slotStyles = isNamaz 
+                                ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
+                                : isFree
+                                ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
+                                : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}` };
+                                
+                            const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
+                            
+                            return (
+                                <div
+                                    key={i}
+                                    className={slotClasses}
+                                    style={slotStyles}
+                                >
+                                    <div className="text-xs text-[#cfc0f8] mb-1 font-mono font-bold tracking-wider">
+                                        {DAY_HOURS[i] !== undefined ? formatHour(DAY_HOURS[i]) : ""}
+                                    </div>
+
+                                    {isNamaz ? (
+                                        <div className="p-2 rounded-lg text-center text-white font-extrabold text-lg">
+                                            {item.split(' ')[1]}
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={item}
+                                            onChange={(e) => {
+                                                const newTT = [...timetable];
+                                                // Update the specific hour for the selected day
+                                                if(viewMode === 'Weekly'){
+                                                    newTT[selectedDayIndex][i] = e.target.value;
+                                                } else {
+                                                    newTT[0][i] = e.target.value;
+                                                }
+                                                setTimetable(newTT);
+                                            }}
+                                            className={`w-full ${isFree ? 'bg-[#080216] border border-[#2b173d]' : 'bg-white/10 border border-white/20'} text-[#efe7ff] px-3 py-2 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#9b6cf0]`}
+                                        >
+                                            <option value="Free" className="bg-[#080216]">Free</option>
+                                            {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#080216]">{s}</option>)}
+                                            {subjects.filter(s => s.name.trim() !== "").map(s => <option key={s.name} value={s.name} className="bg-[#080216]">{s.name}</option>)}
+                                        </select>
+                                    )}
+                                    
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
           </div>
 
