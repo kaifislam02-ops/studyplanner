@@ -27,8 +27,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-ki
 
 
 // --- Component Imports (FIXED: ONLY EXISTING FILES ARE IMPORTED) ---
-// The missing components (StudyAnalyticsPanel and SubjectPlanner) have been removed 
-// to fix the Vercel build error.
+// Removed componentsStudyAnalyticsPanel and componentsSubjectPlanner
 import { DraggableSlot } from "../componentsDraggableSlot"; 
 
 
@@ -794,17 +793,13 @@ export default function Home() {
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Controls (SubjectPlanner content moved here) */}
+        {/* LEFT: Controls (SubjectPlanner functionality inlined here) */}
         <section className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-5">
             <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
-                📚 Study Plan (Planner Feature Disabled)
+                📚 Study Plan & Goals
             </h3>
-            <p className="text-red-400 font-bold">
-                ⚠️ **Feature Disabled:** The planner component (`SubjectPlanner`) is missing from your repository. 
-                Please add the file or its content to restore this functionality.
-            </p>
-            {/* The actual logic for subject management remains in Home function for generating timetable */}
-            {/* Subject Input Fields (Mimicking SubjectPlanner) */}
+            
+            {/* Subject Input Fields (Inlined from SubjectPlanner) */}
             <div className="space-y-3">
                 <h4 className="text-lg font-semibold text-[#cfc0f8]">Subjects & Goals</h4>
                 {subjects.map((sub, i) => (
@@ -871,7 +866,7 @@ export default function Home() {
                 <p>Available Slots: <strong className="text-[#A855F7]">{maxPossibleDailyHours}</strong> / day (After Namaz)</p>
             </div>
             
-            {/* Timetable Management Section (Kept as logic is in page.tsx) */}
+            {/* Timetable Management Section (Save/Load) */}
             <div className="border-t border-purple-900/50 pt-4 space-y-3">
                 <h4 className="text-lg font-semibold text-[#cfc0f8]">Save & Load</h4>
                 
@@ -936,18 +931,18 @@ export default function Home() {
         </section>
 
 
-        {/* RIGHT: Pomodoro, Analytics (Now missing), and Timetable */}
+        {/* RIGHT: Pomodoro, Analytics (Placeholder), and Timetable */}
         <section className="lg:col-span-2 space-y-6">
             
           <PomodoroTimer neonButtonClass={neonButtonClass} />
           
-          {/* Analytics Panel (Disabled) */}
+          {/* Analytics Panel (Placeholder only) */}
           <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
             <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
-                📈 Study Analytics (Disabled)
+                📈 Study Analytics
             </h3>
-            <p className="text-red-400 font-bold text-center">
-                ⚠️ **Feature Disabled:** The analytics component (`StudyAnalyticsPanel`) is missing from your repository.
+            <p className="text-[#a886f7] font-semibold text-center p-4 bg-black/20 rounded-lg border border-purple-800/50">
+                Data visualization for this panel is currently disabled.
             </p>
           </div>
 
