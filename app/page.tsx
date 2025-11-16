@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react"; // ADDED useMemo for cleaner code
 import { db, auth, provider } from "../firebaseConfig";
 import { signInWithPopup, signOut, User } from "firebase/auth";
 import {
@@ -84,7 +84,8 @@ const PomodoroTimer = () => {
       // Automatically switch mode
       setIsStudyMode(prevMode => !prevMode);
       setTime(isStudyMode ? BREAK_TIME : STUDY_TIME);
-      alert(`Time for ${isStudyMode ? 'Break' : 'Study'}!`);
+      // Use a subtle notification instead of alert
+      console.log(`Time for ${isStudyMode ? 'Break' : 'Study'}!`);
       // Optional: Play a sound
     }
 
@@ -145,19 +146,46 @@ const PomodoroTimer = () => {
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
-  // MODIFIED: Added priority to initial state
+  // MODIFIED: Added priority field to initial state
   const [subjects, setSubjects] = useState<Subject[]>([{ name: "", hours: "", priority: "3" }]);
   const [timetable, setTimetable] = useState<string[]>([]);
   const [timetableName, setTimetableName] = useState("");
   const [savedTimetables, setSavedTimetables] = useState<{id:string,name:string}[]>([]);
   const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
-  const [notes, setNotes] = useState(""); // NEW: Notes State
+  // NEW: State for notes and UI mount effect
+  const [notes, setNotes] = useState(""); 
+  const [mounted, setMounted] = useState(false);
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
+  // --- START: Firebase and Utility Functions (Now all inside Home) ---
 
-  // MODIFIED: Changed Subject type
+  // Google Sign-In
+  const login = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      setUser(result.user);
+      loadAllTimetables(result.user.uid);
+    } catch (e) {
+      console.error("Sign-In error:", e);
+      alert("Sign-In failed. Check console.");
+    }
+  };
+
+  const logout = async () => {
+    try { await signOut(auth); } catch (e) { console.error(e); }
+    setUser(null);
+    setSubjects([{ name: "", hours: "", priority: "3" }]);
+    setTimetable([]);
+    setSavedTimetables([]);
+    setSelectedTimetableId("");
+    setTimetableName("");
+  };
+
+  const addSubject = () => setSubjects(prev => [...prev, { name: "", hours: "", priority: "3" }]);
+
+  // Type-safe handler
+  // MODIFIED: Added priority to field type
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     const newSubjects = [...subjects];
     newSubjects[i][field] = value;
@@ -190,7 +218,7 @@ export default function Home() {
         .sort((a, b) => {
           const pA = parseInt(a.priority || "0");
           const pB = parseInt(b.priority || "0");
-          return pB - pA; // Descending sort
+          return pB - pA; // Descending sort (Highest priority first)
         });
 
     // 2. Create the subject queue based on sorted priority
@@ -210,32 +238,142 @@ export default function Home() {
 
     setTimetable(grid);
   };
-  
-  // Save, Load, Delete functions are kept the same but will now handle the 'priority' field in Firestore.
 
-  // Export PDF function is unchanged.
+  const saveTimetable = async () => {
+    if (!user) return alert("Please sign in first!");
+    if (!timetableName.trim()) return alert("Enter timetable name!");
+    setLoadingSave(true);
+    try {
+      if (selectedTimetableId) {
+        const ref = doc(db, "timetables", selectedTimetableId);
+        // Subjects now includes priority field
+        await updateDoc(ref, { subjects, timetable, name: timetableName.trim() });
+        alert("Timetable updated!");
+      } else {
+        await addDoc(collection(db, "timetables"), {
+          uid: user.uid,
+          name: timetableName.trim(),
+          subjects, // Subjects now includes priority field
+          timetable,
+          createdAt: new Date()
+        });
+        alert("Timetable saved!");
+      }
+      setTimetableName("");
+      setSelectedTimetableId("");
+      await loadAllTimetables(user.uid);
+    } catch (e) {
+      console.error("Save error:", e);
+      alert("Failed to save. Check console.");
+    } finally {
+      setLoadingSave(false);
+    }
+  };
+
+  const deleteTimetable = async (id: string) => {
+    if (!user) return;
+    const ok = confirm("Are you sure you want to delete this timetable?");
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "timetables", id));
+      if (selectedTimetableId === id) {
+        setSelectedTimetableId("");
+        setTimetable([]);
+        setSubjects([{ name: "", hours: "", priority: "3" }]); // Reset subjects with priority
+        setTimetableName("");
+      }
+      await loadAllTimetables(user.uid);
+    } catch (e) {
+      console.error("Delete error:", e);
+      alert("Failed to delete. Check console.");
+    }
+  };
+
+  const loadAllTimetables = async (uid: string) => {
+    try {
+      const q = query(collection(db, "timetables"), where("uid", "==", uid));
+      const snap = await getDocs(q);
+      const list: {id:string,name:string}[] = [];
+      snap.forEach(d => list.push({ id: d.id, name: d.data().name || "Unnamed" }));
+      setSavedTimetables(list);
+    } catch (e) {
+      console.error("Load all error:", e);
+    }
+  };
+
+  const loadTimetable = async (id: string) => {
+    try {
+      // NOTE: Using getDocs on entire collection and then filtering by ID is inefficient.
+      // Better: const docRef = doc(db, "timetables", id); const docSnap = await getDoc(docRef);
+      // For now, keeping the original logic structure but with minor fix for missing fields.
+      const q = query(collection(db, "timetables"), where("__name__", "==", id)); // Correct way to query by ID
+      const snap = await getDocs(q);
+      
+      snap.forEach(docSnap => {
+        if (docSnap.id === id) {
+          const data = docSnap.data();
+          // Ensure loaded subjects have a priority field, default to "3" if missing
+          const loadedSubjects = (data.subjects || [{ name: "", hours: "", priority: "3" }]).map((s:any) => ({
+              name: s.name || "",
+              hours: s.hours || "",
+              priority: s.priority || "3" 
+          }));
+          
+          setSubjects(loadedSubjects);
+          setTimetable(data.timetable || []);
+          setTimetableName(data.name || "");
+          setSelectedTimetableId(id);
+        }
+      });
+    } catch (e) {
+      console.error("Load timetable error:", e);
+    }
+  };
+
+  const exportToPDF = async () => {
+    if (!timetableRef.current) return alert("Nothing to export");
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(timetableRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${timetableName || "timetable"}.pdf`);
+    } catch (e) {
+      console.error("Export error:", e);
+      alert("Export failed. Check console.");
+    }
+  };
   
-  // UseEffect and auth functions are unchanged.
+  // --- END: Firebase and Utility Functions ---
+
 
   useEffect(() => {
     if (auth.currentUser) {
       setUser(auth.currentUser);
-      loadAllTimetables(auth.currentUser.uid);
+      // ✅ loadAllTimetables is now correctly defined in scope
+      loadAllTimetables(auth.currentUser.uid); 
     }
   }, []);
-
+  
+  // NEW: Effect to trigger fade-in
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // --- Reusable button classes for a unified neon style ---
   const neonButtonClass = (color: string) =>
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
 
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0211] via-[#0f0420] to-[#140426] text-slate-100 p-6">
+      {/* NAVBAR */}
       <header className="max-w-6xl mx-auto mb-6">
-        {/* Navbar component (Sign In/Out) */}
         <nav className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-2xl p-3 border border-purple-900/40 shadow-xl">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-gradient-to-br from-[#6D28D9] to-[#C026D3] rounded-xl flex items-center justify-center text-white font-bold shadow-md">
@@ -262,6 +400,8 @@ export default function Home() {
         </nav>
       </header>
 
+      {/* MAIN */}
+      {/* ADDED: Mounted state for a smoother UI appearance */}
       <main className={`max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         {/* LEFT: Controls */}
         <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl">
@@ -317,7 +457,7 @@ export default function Home() {
 
           {/* Save / load */}
           <div className="pt-5 border-t border-purple-900/50 space-y-3">
-            {/* ... Save/Load UI (Unchanged) ... */}
+            {/* ... Save/Load UI ... */}
             <input
               type="text"
               placeholder="Timetable name (required to save)"
@@ -390,7 +530,6 @@ export default function Home() {
             <h3 className="text-2xl font-extrabold mb-5 text-[#efe7ff]">🗓️ Your Daily Schedule</h3>
 
             <div ref={timetableRef} className="w-full">
-              {/* ... Timetable Grid (Unchanged) ... */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {timetable.length === 0 ? (
                   <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
@@ -400,8 +539,8 @@ export default function Home() {
                   const isNamaz = NAMAZ_SLOTS.some(n => item.includes(n.name));
                   const isFree = item === 'Free';
                   const bg = isNamaz ? "#06b6d4" : getColor(item);
-                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20);
-
+                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20); // Using helper function
+                    
                   const slotStyles = isNamaz 
                     ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
                     : isFree
@@ -466,6 +605,7 @@ export default function Home() {
         </section>
       </main>
 
+      {/* FOOTER */}
       <footer className="max-w-6xl mx-auto mt-8 text-center text-sm text-[#bfb0f7]">
         Made with ❤️ • StudyPlanner — Purple Galaxy
       </footer>
