@@ -1,56 +1,128 @@
+/* globals.css - REPLACE your current file with this content */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-* {
+:root{
+  --glass-bg: rgba(255,255,255,0.9);
+  --glass-soft: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.14);
+  --ui-radius: 12px;
+  --ui-radius-sm: 8px;
+}
+
+/* Safer reset: preserve native control spacing while normalizing box-sizing */
+html, body {
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  background: transparent; /* let Tailwind / your JSX handle page background */
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color: #0f172a;
+}
+
+/* Box sizing */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* Body safe defaults */
 body {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Glass morphism effect */
+/* DEFAULT FORM CONTROL RESET (keeps things predictable) */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.2;
+  color: inherit;
+  background: transparent;
+  outline: none;
+  border: none;
+  appearance: none;
+}
+
+/* Provide accessible focus styles but don't remove outlines */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid rgba(99,102,241,0.18);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Buttons (sane defaults) */
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inputs / textareas / selects - baseline appearances */
+input[type="text"],
+input[type="number"],
+textarea,
+select,
+button[type="button"],
+button[type="submit"] {
+  background-color: transparent;
+}
+
+/* Glass morphism effect (tunable) */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--glass-soft);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--ui-radius);
 }
 
+/* lighter card for content on light backgrounds */
 .glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 28px rgba(2,6,23,0.06);
+  border-radius: var(--ui-radius);
+}
+
+/* subtle alternative for dark elements (if needed) */
+.glass-dark {
+  background: rgba(8,7,14,0.5);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 22px rgba(8,7,14,0.3);
+  border-radius: var(--ui-radius);
 }
 
 /* Smooth animations */
 .smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.28s cubic-bezier(.2,.9,.2,1);
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar (kept subtle) */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 999px;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
+  background: rgba(0,0,0,0.12);
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.02);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(0,0,0,0.18);
 }
 
-/* Gradient text */
+/* Gradient text helper */
 .gradient-text {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
@@ -58,24 +130,7 @@ body {
   background-clip: text;
 }
 
-/* Shimmer effect for loading */
+/* Shimmer for loaders */
 .shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Floating animation */
-.floating {
-  animation: floating 3s ease-in-out infinite;
-}
-
-@keyframes floating {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
+  background: linear-gradient(90deg, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.07) 75%);
+  background-size: 200% 10
