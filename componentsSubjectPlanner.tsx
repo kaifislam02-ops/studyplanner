@@ -1,5 +1,7 @@
 import React from 'react';
 import { Subject } from './app/page'; 
+// NEW IMPORT: Headless UI Listbox
+import { Listbox } from '@headlessui/react';
 
 interface SubjectPlannerProps {
     subjects: Subject[];
@@ -12,6 +14,13 @@ interface SubjectPlannerProps {
     neonButtonClass: (color: string) => string;
     COMMON_SUBJECTS: string[];
 }
+
+// Helper list for priority mapping
+const priorityOptions = [
+    { name: 'High', value: '3' },
+    { name: 'Medium', value: '2' },
+    { name: 'Low', value: '1' },
+];
 
 export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
     subjects,
@@ -29,20 +38,36 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
             <h4 className="text-lg font-semibold text-[#cfc0f8]">Subjects & Goals</h4>
             {subjects.map((sub, i) => (
                 <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
-                    {/* Name Input/Select */}
-                    <select
-                        value={sub.name}
-                        onChange={(e) => handleChange(i, "name", e.target.value)}
-                        // FIX: Force deep black background on select
-                        className="flex-1 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
-                    >
-                        {/* FIX: Force deep black background on options */}
-                        <option value="" className="bg-[#030008] text-gray-400">Select Subject</option>
-                        {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#030008] text-white">{s}</option>)}
-                        <option value={sub.name} disabled className="bg-[#030008] text-gray-500">--- Custom ---</option>
-                    </select>
                     
-                    {/* Hours Input */}
+                    {/* 1. Subject Name Listbox */}
+                    <Listbox 
+                        value={sub.name} 
+                        onChange={(value) => handleChange(i, "name", value)}
+                    >
+                        <div className="relative flex-1">
+                            <Listbox.Button 
+                                className="w-full text-left bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none flex justify-between items-center"
+                            >
+                                {sub.name || 'Select Subject'}
+                            </Listbox.Button>
+                            <Listbox.Options className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#030008] py-1 text-base shadow-lg ring-1 ring-white/20 focus:outline-none sm:text-sm">
+                                <Listbox.Option value="" className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 text-gray-400 ${active ? 'bg-purple-700/50' : 'bg-[#030008]'}`}>
+                                    Select Subject
+                                </Listbox.Option>
+                                {COMMON_SUBJECTS.map((s, idx) => (
+                                    <Listbox.Option
+                                        key={idx}
+                                        value={s}
+                                        className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 text-white ${active ? 'bg-purple-700/50' : 'bg-[#030008]'}`}
+                                    >
+                                        {s}
+                                    </Listbox.Option>
+                                ))}
+                            </Listbox.Options>
+                        </div>
+                    </Listbox>
+                    
+                    {/* Hours Input (Standard Input) */}
                     <input
                         type="number"
                         placeholder="Hrs/Day"
@@ -53,19 +78,31 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                         min="0"
                     />
                     
-                    {/* Priority Select */}
-                    <select
-                        value={sub.priority}
-                        onChange={(e) => handleChange(i, "priority", e.target.value)}
-                        // FIX: Force deep black background on select
-                        className="w-20 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
+                    {/* 2. Priority Listbox */}
+                    <Listbox 
+                        value={sub.priority} 
+                        onChange={(value) => handleChange(i, "priority", value)}
                     >
-                        {/* FIX: Force deep black background on options */}
-                        <option value="3" className="bg-[#030008] text-white">High</option>
-                        <option value="2" className="bg-[#030008] text-white">Medium</option>
-                        <option value="1" className="bg-[#030008] text-white">Low</option>
-                    </select>
-                    
+                        <div className="relative w-20">
+                            <Listbox.Button 
+                                className="w-full text-left bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none flex justify-between items-center"
+                            >
+                                {priorityOptions.find(o => o.value === sub.priority)?.name}
+                            </Listbox.Button>
+                            <Listbox.Options className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#030008] py-1 text-base shadow-lg ring-1 ring-white/20 focus:outline-none sm:text-sm">
+                                {priorityOptions.map((option, idx) => (
+                                    <Listbox.Option
+                                        key={idx}
+                                        value={option.value}
+                                        className={({ active }) => `relative cursor-default select-none py-2 pl-3 pr-4 text-white ${active ? 'bg-purple-700/50' : 'bg-[#030008]'}`}
+                                    >
+                                        {option.name}
+                                    </Listbox.Option>
+                                ))}
+                            </Listbox.Options>
+                        </div>
+                    </Listbox>
+
                     {/* Remove Button */}
                     <button onClick={() => removeSubject(sub.id)} className="text-red-400 hover:text-red-300 p-1">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
