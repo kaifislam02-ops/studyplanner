@@ -26,12 +26,11 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 
-// --- Component Imports (REVERTED TO CORRECT ALIAS) ---
-// We assume the component files are now correctly located in the /components folder 
-// and named correctly (e.g., StudyAnalyticsPanel.tsx).
-import { StudyAnalyticsPanel } from "@/components/StudyAnalyticsPanel";
-import { SubjectPlanner } from "@/components/SubjectPlanner";
-import { DraggableSlot } from "@/components/DraggableSlot";
+// --- Component Imports (FIXED PATHS TO RELATIVE) ---
+// This fix uses the reliable relative path (../components/) to bypass the alias issue.
+import { StudyAnalyticsPanel } from "../components/StudyAnalyticsPanel";
+import { SubjectPlanner } from "../components/SubjectPlanner";
+import { DraggableSlot } from "../components/DraggableSlot";
 
 
 // --- CONSTANTS ---
@@ -736,7 +735,7 @@ export default function Home() {
       const pdf = new jsPDF("p", "mm", "a4");
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const pdfHeight = (imgProps.height * pdfWidth) / pdfWidth;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${timetableName || "weekly-timetable"}.pdf`);
     } catch (e) {
