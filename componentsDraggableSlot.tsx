@@ -1,7 +1,8 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Subject, TimetableSlot } from '@/app/page';
+// FIXED PATH: Correct relative path from the root directory to find app/page
+import { Subject, TimetableSlot } from './app/page'; 
 
 interface DraggableSlotProps {
     slot: TimetableSlot;

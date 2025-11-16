@@ -26,11 +26,10 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 
-// --- Component Imports (FIXED PATHS TO RELATIVE) ---
-// This fix uses the reliable relative path (../components/) to bypass the alias issue.
-import { StudyAnalyticsPanel } from "../components/StudyAnalyticsPanel";
-import { SubjectPlanner } from "../components/SubjectPlanner";
-import { DraggableSlot } from "../components/DraggableSlot";
+// --- Component Imports (FIXED: ONLY EXISTING FILES ARE IMPORTED) ---
+// The missing components (StudyAnalyticsPanel and SubjectPlanner) have been removed 
+// to fix the Vercel build error.
+import { DraggableSlot } from "../componentsDraggableSlot"; 
 
 
 // --- CONSTANTS ---
@@ -585,7 +584,7 @@ export default function Home() {
     setSelectedTimetableId("");
   };
 
-  // Firestore Logic
+  // Firestore Logic (UPDATED: Firebase Nested Array Fix)
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -593,13 +592,26 @@ export default function Home() {
     
     setLoadingSave(true);
     try {
+      // 1. Prepare subjects by removing the client-side 'id'
       const subjectsToSave = subjects.map(({ id, ...rest }) => rest);
+
+      // 2. Prepare the weeklyTimetable (CRITICAL: Deep copy and clean the slot data)
+      // This mapping ensures only primitive types are saved, avoiding the nested array error.
+      const weeklyTimetableToSave = Object.keys(weeklyTimetable).reduce((acc, day) => {
+          acc[day] = weeklyTimetable[day].map(slot => ({
+              subject: slot.subject,
+              isNamaz: slot.isNamaz,
+              isCompleted: slot.isCompleted,
+              hour: slot.hour,
+          }));
+          return acc;
+      }, {} as WeeklyTimetable);
 
       const dataToSave = {
         uid: user.uid,
         name: timetableName.trim(),
         subjects: subjectsToSave,
-        weeklyTimetable, 
+        weeklyTimetable: weeklyTimetableToSave, // Use the cleaned object
         notes, 
       };
       
@@ -782,41 +794,162 @@ export default function Home() {
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Controls */}
-        <SubjectPlanner
-          subjects={subjects}
-          addSubject={addSubject}
-          handleChange={handleChange}
-          removeSubject={removeSubject}
-          generateWeeklyTimetable={generateWeeklyTimetable}
-          totalRequestedHours={totalRequestedHours}
-          maxPossibleDailyHours={maxPossibleDailyHours}
-          MAX_CONSECUTIVE_SLOTS={MAX_CONSECUTIVE_SLOTS}
-          user={user}
-          timetableName={timetableName}
-          setTimetableName={setTimetableName}
-          saveTimetable={saveTimetable}
-          exportToPDF={exportToPDF}
-          loadingSave={loadingSave}
-          savedTimetables={savedTimetables}
-          selectedTimetableId={selectedTimetableId}
-          loadTimetable={loadTimetable}
-          deleteTimetable={deleteTimetable}
-          notes={notes}
-          setNotes={setNotes}
-          neonButtonClass={neonButtonClass}
-        />
+        {/* LEFT: Controls (SubjectPlanner content moved here) */}
+        <section className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-5">
+            <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
+                📚 Study Plan (Planner Feature Disabled)
+            </h3>
+            <p className="text-red-400 font-bold">
+                ⚠️ **Feature Disabled:** The planner component (`SubjectPlanner`) is missing from your repository. 
+                Please add the file or its content to restore this functionality.
+            </p>
+            {/* The actual logic for subject management remains in Home function for generating timetable */}
+            {/* Subject Input Fields (Mimicking SubjectPlanner) */}
+            <div className="space-y-3">
+                <h4 className="text-lg font-semibold text-[#cfc0f8]">Subjects & Goals</h4>
+                {subjects.map((sub, i) => (
+                    <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
+                        {/* Name */}
+                        <select
+                            value={sub.name}
+                            onChange={(e) => handleChange(i, "name", e.target.value)}
+                            className="flex-1 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
+                        >
+                            <option value="">Select Subject</option>
+                            {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420]">{s}</option>)}
+                            <option value={sub.name} disabled className="bg-[#0f0420] text-gray-500">--- Custom ---</option>
+                        </select>
+                        
+                        {/* Hours */}
+                        <input
+                            type="number"
+                            placeholder="Hrs/Day"
+                            value={sub.hours}
+                            onChange={(e) => handleChange(i, "hours", e.target.value)}
+                            className="w-16 bg-transparent text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
+                            min="0"
+                        />
+                        
+                        {/* Priority */}
+                        <select
+                            value={sub.priority}
+                            onChange={(e) => handleChange(i, "priority", e.target.value)}
+                            className="w-20 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
+                        >
+                            <option value="3" className="bg-[#0f0420]">High</option>
+                            <option value="2" className="bg-[#0f0420]">Medium</option>
+                            <option value="1" className="bg-[#0f0420]">Low</option>
+                        </select>
+                        
+                        {/* Remove Button */}
+                        <button onClick={() => removeSubject(sub.id)} className="text-red-400 hover:text-red-300 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.5H4.25a.75.75 0 0 0 0 1.5h.581l1.194 7.32a3 3 0 0 0 2.966 2.68h3.338a3 3 0 0 0 2.965-2.68l1.194-7.32h.581a.75.75 0 0 0 0-1.5H14v-.5A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4.25a1.25 1.25 0 1 1 2.5 0 1.25 1.25 0 0 1-2.5 0ZM6.75 6.25l-.426 6.81a1.5 1.5 0 0 0 1.48 1.34h3.338a1.5 1.5 0 0 0 1.48-1.34l-.426-6.81H6.75Z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                ))}
+            </div>
 
-        {/* RIGHT: Pomodoro, Analytics and Timetable */}
+            <div className="flex gap-2">
+                <button 
+                    onClick={addSubject} 
+                    className={neonButtonClass("flex-1 bg-gray-600 hover:bg-gray-700 text-white")}
+                >
+                    + Add Subject
+                </button>
+                <button 
+                    onClick={generateWeeklyTimetable} 
+                    className={neonButtonClass("flex-1 bg-[#A855F7] hover:bg-[#9333ea] text-white")}
+                >
+                    Generate Weekly Timetable
+                </button>
+            </div>
+
+            <div className="text-xs text-[#cfc0f8] border-t border-purple-900/50 pt-3">
+                <p>Requested Hours: <strong className="text-[#A855F7]">{totalRequestedHours}</strong> / day</p>
+                <p>Available Slots: <strong className="text-[#A855F7]">{maxPossibleDailyHours}</strong> / day (After Namaz)</p>
+            </div>
+            
+            {/* Timetable Management Section (Kept as logic is in page.tsx) */}
+            <div className="border-t border-purple-900/50 pt-4 space-y-3">
+                <h4 className="text-lg font-semibold text-[#cfc0f8]">Save & Load</h4>
+                
+                <input
+                    type="text"
+                    placeholder="Timetable Name"
+                    value={timetableName}
+                    onChange={(e) => setTimetableName(e.target.value)}
+                    className="w-full bg-black/50 border border-purple-900/50 p-2 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-[#A855F7] focus:border-[#A855F7] outline-none"
+                />
+                
+                <textarea
+                    placeholder="Notes (optional)"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    className="w-full bg-black/50 border border-purple-900/50 p-2 rounded-lg text-sm text-white placeholder-gray-400 focus:ring-[#A855F7] focus:border-[#A855F7] outline-none"
+                />
+
+                <div className="flex gap-2">
+                    <button 
+                        onClick={saveTimetable} 
+                        disabled={loadingSave || !user}
+                        className={neonButtonClass("flex-1 bg-green-600 hover:bg-green-700 text-white")}
+                    >
+                        {loadingSave ? 'Saving...' : selectedTimetableId ? 'Update Timetable' : 'Save Timetable'}
+                    </button>
+                    <button 
+                        onClick={exportToPDF} 
+                        disabled={Object.keys(weeklyTimetable).length === 0}
+                        className={neonButtonClass("w-fit bg-blue-600 hover:bg-blue-700 text-white")}
+                    >
+                        Export PDF
+                    </button>
+                </div>
+
+                {savedTimetables.length > 0 && (
+                    <div className="space-y-2 mt-4">
+                        <h5 className="text-sm font-medium text-[#cfc0f8]">Saved Timetables:</h5>
+                        {savedTimetables.map(tt => (
+                            <div key={tt.id} className={`flex justify-between items-center p-2 rounded-lg text-sm transition ${tt.id === selectedTimetableId ? 'bg-purple-800/40 border border-purple-500' : 'bg-black/20 hover:bg-black/30'}`}>
+                                <span className="text-white">{tt.name}</span>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => loadTimetable(tt.id)}
+                                        className="text-yellow-400 hover:text-yellow-300 transition"
+                                    >
+                                        Load
+                                    </button>
+                                    <button 
+                                        onClick={() => deleteTimetable(tt.id)}
+                                        className="text-red-400 hover:text-red-300 transition"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </section>
+
+
+        {/* RIGHT: Pomodoro, Analytics (Now missing), and Timetable */}
         <section className="lg:col-span-2 space-y-6">
             
           <PomodoroTimer neonButtonClass={neonButtonClass} />
           
-          <StudyAnalyticsPanel 
-              weeklyTimetable={weeklyTimetable} 
-              selectedDay={selectedDay} 
-              subjects={subjects} 
-          />
+          {/* Analytics Panel (Disabled) */}
+          <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
+            <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
+                📈 Study Analytics (Disabled)
+            </h3>
+            <p className="text-red-400 font-bold text-center">
+                ⚠️ **Feature Disabled:** The analytics component (`StudyAnalyticsPanel`) is missing from your repository.
+            </p>
+          </div>
 
           {/* Timetable Display Component (Refactored) */}
           <div ref={timetableRef}> 
