@@ -34,6 +34,9 @@ const NAMAZ_SLOTS = [
 // Hours of the day (4 AM to 11 PM) - 20 slots
 const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
 
+// The number of available slots per day for study (Total slots - Namaz slots)
+const TOTAL_DAILY_STUDY_SLOTS = DAY_HOURS.length - NAMAZ_SLOTS.length; // 20 - 5 = 15
+
 // Colors for subjects (used for small legend chips)
 const COLORS = ["#A855F7","#EC4899","#8B5CF6","#7C3AED","#E879F9","#C084FC","#D946EF"];
 
@@ -158,7 +161,7 @@ const PomodoroTimer = ({ neonButtonClass }: { neonButtonClass: (color: string) =
 };
 
 
-// --- Timetable Display Component (NEW/REFACTORED) ---
+// --- Timetable Display Component ---
 const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjects, toggleCompletion, updateSlotSubject, viewMode, setViewMode }: {
     weeklyTimetable: WeeklyTimetable,
     selectedDay: string,
@@ -178,7 +181,6 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
         if (newMode === 'daily') { 
             setSelectedDay(getTodayName());
         } else { 
-            // When switching to weekly, if the current day is not in the WEEK_DAYS list, default to Monday
             if (!WEEK_DAYS.includes(selectedDay)) {
                 setSelectedDay('Monday');
             }
@@ -310,7 +312,6 @@ export default function Home() {
   
   const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({}); 
   const [selectedDay, setSelectedDay] = useState<string>("Monday"); 
-  // NEW STATE: View mode
   const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
 
   const [user, setUser] = useState<User | null>(null);
@@ -320,6 +321,21 @@ export default function Home() {
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
   const [notes, setNotes] = useState<string>(""); 
+  
+  // --- NEW: Calculate required vs available hours ---
+  const { totalRequestedHours, maxPossibleDailyHours } = useMemo(() => {
+    const hours = subjects.reduce((sum, s) => {
+      const hrs = parseInt(s.hours || "0");
+      return sum + hrs;
+    }, 0);
+
+    return {
+        totalRequestedHours: hours,
+        maxPossibleDailyHours: TOTAL_DAILY_STUDY_SLOTS // 15
+    };
+  }, [subjects]);
+  // --- END: NEW useMemo ---
+
 
   // Google Sign-In & Auth
   const login = async () => {
@@ -338,8 +354,8 @@ export default function Home() {
     setUser(null);
     setSubjects([{ id: createId(), name: "", hours: "", priority: "3" }]);
     setWeeklyTimetable({});
-    setSelectedDay(getTodayName()); // Reset to today
-    setViewMode('daily'); // Reset to daily
+    setSelectedDay(getTodayName()); 
+    setViewMode('daily'); 
     setSavedTimetables([]);
     setSelectedTimetableId("");
     setTimetableName("");
@@ -427,16 +443,34 @@ export default function Home() {
     return dailyGrid;
   }, [subjects]); 
 
-  // Function to generate the entire weekly timetable
+  // MODIFIED: Function to generate the entire weekly timetable with checks
   const generateWeeklyTimetable = () => {
+    
+    // --- NEW CHECK LOGIC ---
+    if (totalRequestedHours === 0) {
+        alert("Please define at least one subject with study hours before generating the timetable.");
+        return;
+    }
+
+    if (totalRequestedHours > maxPossibleDailyHours) {
+        const confirmExceed = confirm(
+            `You have requested ${totalRequestedHours} hours of study, but there are only ${maxPossibleDailyHours} available slots per day (after Namaz). \n\nThis means some slots will be filled randomly or left as 'Free'. \n\nDo you want to proceed anyway?`
+        );
+        if (!confirmExceed) return;
+    } else if (totalRequestedHours < maxPossibleDailyHours / 2) {
+        const confirmLow = confirm(
+            `You have requested only ${totalRequestedHours} hours of study for a day that has ${maxPossibleDailyHours} available slots. \n\nMost of your day will be marked as 'Free'. \n\nDo you want to proceed anyway?`
+        );
+        if (!confirmLow) return;
+    }
+    // --- END NEW CHECK LOGIC ---
+
     const newWeeklyTimetable: WeeklyTimetable = {};
     WEEK_DAYS.forEach(day => {
-        // Generate a fresh, random schedule for each day
         newWeeklyTimetable[day] = generateDailyTimetable();
     });
     setWeeklyTimetable(newWeeklyTimetable);
     
-    // Switch to daily view and select today's day after generation
     setViewMode('daily');
     setSelectedDay(getTodayName());
   };
@@ -770,8 +804,16 @@ export default function Home() {
                     </div>
                     ))}
                 </div>
+                
+                {/* NEW: Planning Feedback */}
+                <div className="text-xs p-3 rounded-lg bg-[#140426] border border-[#2b173d]">
+                    <p className="text-[#d3c6ef]">
+                        Total daily hours requested: <strong className={totalRequestedHours > maxPossibleDailyHours ? 'text-red-400' : 'text-green-400'}>{totalRequestedHours}</strong> / {maxPossibleDailyHours} available slots (after Namaz).
+                    </p>
+                </div>
 
-                {/* New Weekly Generator Button */}
+
+                {/* Weekly Generator Button */}
                 <div className="flex gap-2">
                     <button onClick={addSubject} className={neonButtonClass("flex-1 bg-gradient-to-r from-[#A855F7] to-[#EC4899] text-white")}>+ Add Subject</button>
                     <button onClick={generateWeeklyTimetable} className={neonButtonClass("bg-green-500 hover:bg-green-600 text-white")}>Generate Weekly Timetable</button>
