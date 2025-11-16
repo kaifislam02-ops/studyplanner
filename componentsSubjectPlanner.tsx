@@ -1,7 +1,7 @@
 import React from 'react';
 import { Subject } from './app/page'; 
 
-// CRITICAL FIX: The missing SubjectPlannerProps interface
+// CRITICAL: Interface definition is required for the component to compile
 interface SubjectPlannerProps {
     subjects: Subject[];
     addSubject: () => void;
@@ -30,11 +30,12 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
             <h4 className="text-lg font-semibold text-[#cfc0f8]">Subjects & Goals</h4>
             {subjects.map((sub, i) => (
                 <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
+                    
                     {/* Name Input/Select */}
                     <select
                         value={sub.name}
                         onChange={(e) => handleChange(i, "name", e.target.value)}
-                        // FIX: Force deep black background on select
+                        // FIX: Force deep black background and white text on select input
                         className="flex-1 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
                         {/* FIX: Force deep black background and white text on options */}
@@ -49,7 +50,7 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                         placeholder="Hrs/Day"
                         value={sub.hours}
                         onChange={(e) => handleChange(i, "hours", e.target.value)}
-                        // FIX: Force deep black background on input
+                        // FIX: Force deep black background and white text on input
                         className="w-16 bg-[#030008] text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white placeholder-gray-400"
                         min="0"
                     />
@@ -58,7 +59,7 @@ export const SubjectPlanner: React.FC<SubjectPlannerProps> = ({
                     <select
                         value={sub.priority}
                         onChange={(e) => handleChange(i, "priority", e.target.value)}
-                        // FIX: Force deep black background on select
+                        // FIX: Force deep black background and white text on select input
                         className="w-20 bg-[#030008] border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none text-white appearance-none"
                     >
                         {/* FIX: Force deep black background and white text on options */}
