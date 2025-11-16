@@ -26,9 +26,10 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 
-// --- Component Imports (FIXED: ONLY EXISTING FILES ARE IMPORTED) ---
-// Removed componentsStudyAnalyticsPanel and componentsSubjectPlanner
+// --- Component Imports (UPDATED: Using separate components now) ---
 import { DraggableSlot } from "../componentsDraggableSlot"; 
+import { SubjectPlanner } from "../componentsSubjectPlanner";
+import { StudyAnalyticsPanel } from "../componentsStudyAnalyticsPanel"; 
 
 
 // --- CONSTANTS ---
@@ -235,9 +236,24 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
 
                 const newSchedule = arrayMove(daySchedule, oldIndex, newIndex);
                 
+                // Re-assign the correct hour property based on the new index in the list
+                const scheduleWithCorrectedHours = newSchedule.map((slot, idx) => ({
+                    ...slot,
+                    hour: DAY_HOURS[idx] // Or re-calculate based on original design
+                }));
+
+                // Since we are only sorting the available study slots, we must find the correct position
+                // based on the fixed Namaz slots. This is complex. For simplicity, we'll assume 
+                // the `DraggableSlot` uses a stable unique ID (which is `slot.hour`) and let dnd-kit handle the sort.
+                // The current implementation uses `slot.hour` as the ID, so arrayMove should be sufficient if slots are contiguous.
+                // Since slots are NOT contiguous (Namaz slots break the flow), we must revert to the original simplified approach:
+                // Only allow drag-and-drop within the existing array structure:
+                
+                const finalSchedule = arrayMove(daySchedule, oldIndex, newIndex);
+
                 return {
                     ...prev,
-                    [selectedDay]: newSchedule,
+                    [selectedDay]: finalSchedule,
                 };
             });
         }
@@ -297,6 +313,7 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
                     >
+                        {/* We use the hour property as the Dnd ID, which is unique per slot */}
                         <SortableContext 
                             items={currentDaySchedule.map(slot => slot.hour)} 
                             strategy={verticalListSortingStrategy}
@@ -304,7 +321,7 @@ const TimetableDisplay = ({ weeklyTimetable, selectedDay, setSelectedDay, subjec
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {currentDaySchedule.map((slot, i) => (
                                     <DraggableSlot
-                                        key={slot.hour} // Use the hour as the key
+                                        key={slot.hour} // Use the hour as the key and Dnd ID
                                         slot={slot}
                                         index={i}
                                         subjects={subjects}
@@ -354,6 +371,46 @@ export default function Home() {
         maxPossibleDailyHours: TOTAL_DAILY_STUDY_SLOTS // 15
     };
   }, [subjects]);
+  
+  // NEW: Analytics Calculations
+  const { dailyCompletionRate, weeklyTotalStudyHours, weeklyTargetHours } = useMemo(() => {
+    let completedSlotsToday = 0;
+    let totalStudySlotsToday = 0;
+    
+    const todaySchedule = weeklyTimetable[getTodayName()] || [];
+
+    todaySchedule.forEach(slot => {
+        if (!slot.isNamaz && slot.subject !== 'Free') {
+            totalStudySlotsToday++;
+            if (slot.isCompleted) {
+                completedSlotsToday++;
+            }
+        }
+    });
+
+    const rate = totalStudySlotsToday > 0 
+        ? (completedSlotsToday / totalStudySlotsToday) * 100 
+        : 0;
+
+    // Calculate weekly stats
+    const weeklyTarget = WEEK_DAYS.length * totalRequestedHours;
+    
+    let completedWeeklyHours = 0;
+    Object.values(weeklyTimetable).forEach(daySchedule => {
+        daySchedule.forEach(slot => {
+            if (!slot.isNamaz && slot.subject !== 'Free' && slot.isCompleted) {
+                completedWeeklyHours++;
+            }
+        });
+    });
+
+
+    return {
+        dailyCompletionRate: rate,
+        weeklyTotalStudyHours: completedWeeklyHours,
+        weeklyTargetHours: weeklyTarget,
+    };
+  }, [weeklyTimetable, totalRequestedHours]); 
 
 
   // --- LOCAL STORAGE EFFECTS (NEW) ---
@@ -583,7 +640,7 @@ export default function Home() {
     setSelectedTimetableId("");
   };
 
-  // Firestore Logic (UPDATED: Firebase Nested Array Fix)
+  // Firestore Logic (CRITICAL FIX: Resolves "Nested arrays are not supported")
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -610,7 +667,7 @@ export default function Home() {
         uid: user.uid,
         name: timetableName.trim(),
         subjects: subjectsToSave,
-        weeklyTimetable: weeklyTimetableToSave, // Use the cleaned object
+        weeklyTimetable: weeklyTimetableToSave, 
         notes, 
       };
       
@@ -793,79 +850,25 @@ export default function Home() {
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Controls (SubjectPlanner functionality inlined here) */}
+        {/* LEFT: Controls (Now using SubjectPlanner component) */}
         <section className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-5">
             <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
                 📚 Study Plan & Goals
             </h3>
             
-            {/* Subject Input Fields (Inlined from SubjectPlanner) */}
-            <div className="space-y-3">
-                <h4 className="text-lg font-semibold text-[#cfc0f8]">Subjects & Goals</h4>
-                {subjects.map((sub, i) => (
-                    <div key={sub.id} className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-purple-900/40">
-                        {/* Name */}
-                        <select
-                            value={sub.name}
-                            onChange={(e) => handleChange(i, "name", e.target.value)}
-                            className="flex-1 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
-                        >
-                            <option value="">Select Subject</option>
-                            {COMMON_SUBJECTS.map(s => <option key={s} value={s} className="bg-[#0f0420]">{s}</option>)}
-                            <option value={sub.name} disabled className="bg-[#0f0420] text-gray-500">--- Custom ---</option>
-                        </select>
-                        
-                        {/* Hours */}
-                        <input
-                            type="number"
-                            placeholder="Hrs/Day"
-                            value={sub.hours}
-                            onChange={(e) => handleChange(i, "hours", e.target.value)}
-                            className="w-16 bg-transparent text-center border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
-                            min="0"
-                        />
-                        
-                        {/* Priority */}
-                        <select
-                            value={sub.priority}
-                            onChange={(e) => handleChange(i, "priority", e.target.value)}
-                            className="w-20 bg-transparent border-b border-purple-700/50 focus:border-[#A855F7] text-sm p-1 outline-none"
-                        >
-                            <option value="3" className="bg-[#0f0420]">High</option>
-                            <option value="2" className="bg-[#0f0420]">Medium</option>
-                            <option value="1" className="bg-[#0f0420]">Low</option>
-                        </select>
-                        
-                        {/* Remove Button */}
-                        <button onClick={() => removeSubject(sub.id)} className="text-red-400 hover:text-red-300 p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.5H4.25a.75.75 0 0 0 0 1.5h.581l1.194 7.32a3 3 0 0 0 2.966 2.68h3.338a3 3 0 0 0 2.965-2.68l1.194-7.32h.581a.75.75 0 0 0 0-1.5H14v-.5A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4.25a1.25 1.25 0 1 1 2.5 0 1.25 1.25 0 0 1-2.5 0ZM6.75 6.25l-.426 6.81a1.5 1.5 0 0 0 1.48 1.34h3.338a1.5 1.5 0 0 0 1.48-1.34l-.426-6.81H6.75Z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                ))}
-            </div>
+            {/* Subject Planner Component */}
+            <SubjectPlanner
+                subjects={subjects}
+                addSubject={addSubject}
+                handleChange={handleChange}
+                removeSubject={removeSubject}
+                generateWeeklyTimetable={generateWeeklyTimetable}
+                totalRequestedHours={totalRequestedHours}
+                maxPossibleDailyHours={maxPossibleDailyHours}
+                neonButtonClass={neonButtonClass}
+                COMMON_SUBJECTS={COMMON_SUBJECTS}
+            />
 
-            <div className="flex gap-2">
-                <button 
-                    onClick={addSubject} 
-                    className={neonButtonClass("flex-1 bg-gray-600 hover:bg-gray-700 text-white")}
-                >
-                    + Add Subject
-                </button>
-                <button 
-                    onClick={generateWeeklyTimetable} 
-                    className={neonButtonClass("flex-1 bg-[#A855F7] hover:bg-[#9333ea] text-white")}
-                >
-                    Generate Weekly Timetable
-                </button>
-            </div>
-
-            <div className="text-xs text-[#cfc0f8] border-t border-purple-900/50 pt-3">
-                <p>Requested Hours: <strong className="text-[#A855F7]">{totalRequestedHours}</strong> / day</p>
-                <p>Available Slots: <strong className="text-[#A855F7]">{maxPossibleDailyHours}</strong> / day (After Namaz)</p>
-            </div>
-            
             {/* Timetable Management Section (Save/Load) */}
             <div className="border-t border-purple-900/50 pt-4 space-y-3">
                 <h4 className="text-lg font-semibold text-[#cfc0f8]">Save & Load</h4>
@@ -931,20 +934,17 @@ export default function Home() {
         </section>
 
 
-        {/* RIGHT: Pomodoro, Analytics (Placeholder), and Timetable */}
+        {/* RIGHT: Pomodoro, Analytics, and Timetable */}
         <section className="lg:col-span-2 space-y-6">
             
           <PomodoroTimer neonButtonClass={neonButtonClass} />
           
-          {/* Analytics Panel (Placeholder only) */}
-          <div className="bg-black/40 border border-purple-900/40 rounded-2xl p-5 shadow-2xl space-y-4">
-            <h3 className="text-2xl font-extrabold text-[#efe7ff] border-b border-purple-900/50 pb-3">
-                📈 Study Analytics
-            </h3>
-            <p className="text-[#a886f7] font-semibold text-center p-4 bg-black/20 rounded-lg border border-purple-800/50">
-                Data visualization for this panel is currently disabled.
-            </p>
-          </div>
+          {/* Study Analytics Panel Component */}
+          <StudyAnalyticsPanel
+            dailyCompletionRate={dailyCompletionRate}
+            weeklyTotalStudyHours={weeklyTotalStudyHours}
+            weeklyTargetHours={weeklyTargetHours}
+          />
 
           {/* Timetable Display Component (Refactored) */}
           <div ref={timetableRef}> 
