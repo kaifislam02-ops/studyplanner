@@ -327,13 +327,9 @@ export default function Home() {
   // NEW/MODIFIED: Function to toggle the completion status of a timetable slot
   const toggleCompletion = (dayIndex: number, slotIndex: number) => {
       const newTT = [...timetable];
+      // Check if the slot exists and is not Namaz or Free before toggling
       if (newTT[dayIndex] && newTT[dayIndex][slotIndex] && !newTT[dayIndex][slotIndex].isNamaz && newTT[dayIndex][slotIndex].subject !== 'Free') {
           newTT[dayIndex][slotIndex].isCompleted = !newTT[dayIndex][slotIndex].isCompleted;
-          setTimetable(newTT);
-      }
-      // If viewMode is daily, ensure we update the selected day
-      if (viewMode === 'Daily' && newTT[0]) {
-          newTT[0][slotIndex].isCompleted = !newTT[0][slotIndex].isCompleted;
           setTimetable(newTT);
       }
   };
@@ -357,7 +353,7 @@ export default function Home() {
     validSubjects.forEach(s => {
       const hrs = parseInt(s.hours || "0");
       // Distribute the total required hours across the whole week (7 days)
-      for (let i = 0; i < hrs * 7; i++) subjectQueue.push(s.name); 
+      for (let i = 0; i < hrs; i++) subjectQueue.push(s.name); // FIXED: Removed * 7 multiplier as hours are already total weekly hours
     });
     
     // 3. Shuffle the entire queue for randomness while maintaining priority bias
@@ -385,7 +381,7 @@ export default function Home() {
     setViewMode('Weekly'); // Automatically switch to weekly view
   };
 
-  // MODIFIED: saveTimetable now saves the 2D array of TimetableSlot objects
+  // **MODIFIED:** saveTimetable with improved error logging
   const saveTimetable = async () => {
     if (!user) return alert("Please sign in first!");
     if (!timetableName.trim()) return alert("Enter timetable name!");
@@ -410,12 +406,14 @@ export default function Home() {
       setSelectedTimetableId("");
       await loadAllTimetables(user.uid);
     } catch (e) {
-      console.error("Save error:", e);
-      alert("Failed to save. Check console.");
+      // **IMPROVED ERROR LOGGING**
+      console.error("Firebase Save Error (Check Security Rules and network):", e); 
+      alert("Failed to save. Check your browser's console (F12) for a detailed 'Firebase Save Error' entry. This is often a Firebase Security Rule issue.");
     } finally {
       setLoadingSave(false);
     }
   };
+
 
   const deleteTimetable = async (id: string) => {
     if (!user) return;
@@ -828,7 +826,12 @@ export default function Home() {
                                                 const newTT = [...timetable];
                                                 // Update the specific hour for the selected day
                                                 if(newTT[dayIndexForToggle]){
-                                                    newTT[dayIndexForToggle][i] = { ...newTT[dayIndexForToggle][i], subject: e.target.value };
+                                                    // Ensure we retain completion status
+                                                    newTT[dayIndexForToggle][i] = { 
+                                                        ...newTT[dayIndexForToggle][i], 
+                                                        subject: e.target.value,
+                                                        isCompleted: e.target.value === 'Free' ? false : newTT[dayIndexForToggle][i].isCompleted // Reset completion if switched to Free
+                                                    };
                                                 }
                                                 setTimetable(newTT);
                                             }}
