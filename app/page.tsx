@@ -26,10 +26,12 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 
-// --- Component Imports ---
-import { StudyAnalyticsPanel } from "@/components/StudyAnalyticsPanel";
-import { SubjectPlanner } from "@/components/SubjectPlanner";
-import { DraggableSlot } from "@/components/DraggableSlot";
+// --- Component Imports (FIXED PATHS) ---
+// The paths are corrected based on the Vercel error logs, assuming the files
+// are located in the parent directory (../) and named without the slash.
+import { StudyAnalyticsPanel } from "../componentsStudyAnalyticsPanel";
+import { SubjectPlanner } from "../componentsSubjectPlanner";
+import { DraggableSlot } from "../componentsDraggableSlot";
 
 
 // --- CONSTANTS ---
