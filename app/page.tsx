@@ -47,6 +47,17 @@ const shuffleArray = (array: any[]) => {
   return array;
 };
 
+// --- NEW: Helper function to darken a hex color for gradients ---
+const darkenColor = (color: string, percent: number) => {
+  if (!color.startsWith("#")) return color; // Safety check
+  let [r, g, b] = (color.match(/\w\w/g) || []).map(h => parseInt(h, 16));
+  const p = 1 - percent / 100;
+  r = Math.floor(r * p);
+  g = Math.floor(g * p);
+  b = Math.floor(b * p);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
+};
+
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -57,6 +68,9 @@ export default function Home() {
   const [selectedTimetableId, setSelectedTimetableId] = useState<string>("");
   const timetableRef = useRef<HTMLDivElement | null>(null);
   const [loadingSave, setLoadingSave] = useState(false);
+  
+  // --- NEW: State for load-in animation ---
+  const [mounted, setMounted] = useState(false);
 
   // Google Sign-In
   const login = async () => {
@@ -96,7 +110,7 @@ export default function Home() {
   };
 
   const getColor = (subject: string) => {
-    if (!subject) return "#2d2d2d";
+    if (!subject || subject === "Free") return "#2d2d2d";
     const idx = COMMON_SUBJECTS.indexOf(subject);
     if (idx >= 0) return COLORS[idx % COLORS.length];
     const customIdx = subjects.findIndex(s => s.name === subject);
@@ -232,6 +246,11 @@ export default function Home() {
     }
   }, []);
 
+  // --- NEW: Trigger mount animation ---
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // --- Reusable button classes for a unified neon style ---
   const neonButtonClass = (color: string) =>
     `px-4 py-2 rounded-xl text-sm font-semibold transition btn-neon shadow-lg hover:shadow-2xl hover:scale-[.995] disabled:opacity-60 disabled:hover:scale-100 ${color}`;
@@ -267,8 +286,8 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* MAIN */}
-      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* MAIN - NEW: Added fade-in animation */}
+      <main className={`max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         {/* LEFT: Controls */}
         <section className="lg:col-span-1 bg-black/40 border border-purple-900/40 rounded-2xl p-5 space-y-5 shadow-2xl">
           <h2 className="text-2xl font-extrabold text-[#e9ddfa] border-b border-purple-900/50 pb-3">📚 Plan Your Subjects</h2>
@@ -293,12 +312,13 @@ export default function Home() {
                   onChange={(e) => handleChange(i, "hours", e.target.value)}
                   className="w-16 bg-transparent py-1 text-sm text-center text-[#efe7ff] focus:outline-none focus:ring-0"
                 />
+                {/* --- MODIFIED: Delete button style --- */}
                 <button
                   onClick={() => setSubjects(prev => prev.filter((_, idx) => idx !== i))}
-                  className="p-1 rounded-md bg-red-600/50 hover:bg-red-500 transition text-sm"
+                  className="p-1.5 rounded-full text-red-400 hover:text-red-300 bg-red-900/50 hover:bg-red-800/70 transition-all"
                   title="Remove subject"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -371,20 +391,24 @@ export default function Home() {
             <div ref={timetableRef} className="w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {timetable.length === 0 ? (
+                  // --- MODIFIED: Added animate-pulse to "Generate" ---
                   <div className="col-span-full text-center text-[#bfaaff] p-10 rounded-xl bg-[#0a0420]/40 border border-dashed border-[#2b173d]">
-                    No timetable yet — add subjects and press <strong className="text-green-400">Generate</strong>.
+                    No timetable yet — add subjects and press <strong className="text-green-400 animate-pulse">Generate</strong>.
                   </div>
                 ) : timetable.map((item, i) => {
                   const isNamaz = NAMAZ_SLOTS.some(n => item.includes(n.name));
                   const isFree = item === 'Free';
                   const bg = isNamaz ? "#06b6d4" : getColor(item);
+                  
+                  // --- MODIFIED: Use darkenColor helper for gradients ---
+                  const darkBg = isNamaz ? "#0891b2" : isFree ? "#2b173d" : darkenColor(bg, 20);
 
                   // Set distinct styles for the timetable card/slot
                   const slotStyles = isNamaz 
-                    ? { backgroundColor: bg, border: "1px solid #0891b2" } 
+                    ? { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: "1px solid #0891b2" } 
                     : isFree
-                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" }
-                    : { background: bg, border: `1px solid ${bg}`, opacity: 0.85 };
+                    ? { background: "rgba(14,6,32,0.45)", border: "1px solid #2b173d" } // Glassy for Free
+                    : { background: `linear-gradient(145deg, ${bg} 0%, ${darkBg} 100%)`, border: `1px solid ${darkBg}` }; // Gradient for Subjects
                     
                   const slotClasses = "relative p-3 rounded-xl shadow-lg transition duration-200 hover:shadow-xl hover:scale-[1.01]";
                   
