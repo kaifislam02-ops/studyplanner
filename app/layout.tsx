@@ -23,15 +23,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en">
       <body
         className={`
-          cosmic-bg            /* ✨ Premium cosmic background */
+          cosmic-bg            
           ${inter.variable}
           ${robotoMono.variable}
           antialiased
           min-h-screen
-          text-gray-100        /* Proper contrast for dark UI */
+          text-gray-900       /* Proper text color for light UI */
         `}
       >
         {children}
