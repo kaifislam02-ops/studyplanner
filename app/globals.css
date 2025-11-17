@@ -1,99 +1,127 @@
-/* ---- GLOBAL UI THEME • PREMIUM GLASS COSMIC ---- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Root Theme Variables */
-:root {
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-strong: rgba(255, 255, 255, 0.18);
-  --text-primary: #f5f7fa;
-  --text-secondary: #d0d4dd;
-  --radius-lg: 18px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
-}
-
-/* RESET */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Smooth Font Rendering */
 html, body {
-  width: 100%;
-  min-height: 100%;
-  background: #0c0f1a;
-  color: var(--text-primary);
-  font-family: "Inter", sans-serif;
+  padding: 0;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans), system-ui;
+  background: #f3f4f6;
+  color: #1f2937;
 }
 
-/* SCROLLBAR */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+/* Fix spacing & layout collapsing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* ---- GLASS COMPONENTS ---- */
+/* Restore container spacing */
+body {
+  line-height: 1.5;
+  letter-spacing: 0.3px;
+}
+
+/* Universal card design */
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.35),
-    inset 0 0 20px rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(15px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
+.glass-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
 }
 
-/* ---- INPUTS / BUTTONS ---- */
-input, textarea, select {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  transition: 0.2s;
-}
-input:focus, textarea:focus, select:focus {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: #7dd3fc;
+/* Light floating blur circles */
+.floating-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-/* BUTTONS */
+.floating-bg div {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  filter: blur(150px);
+  opacity: 0.4;
+  animation: float 12s infinite linear;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-40px); }
+  100% { transform: translateY(0); }
+}
+
+/* Text reset: FIX all color issues */
+h1, h2, h3, h4, h5, h6 {
+  color: #111827;
+  font-weight: 700;
+}
+
+p, span, label, input, select, button, textarea {
+  color: #1f2937;
+}
+
+/* Buttons always readable */
 button {
-  transition: 0.25s;
-}
-.btn-primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.45);
+  cursor: pointer;
+  font-weight: 500;
 }
 
-.btn-soft {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-}
-.btn-soft:hover {
-  background: rgba(255, 255, 255, 0.14);
+button:disabled {
+  opacity: 0.5;
 }
 
-/* ---- COSMIC BACKGROUND ---- */
-.cosmic-bg {
-  background: radial-gradient(circle at 20% 20%, #1e1b4b, #0f0a24 60%, #070712 100%);
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 9999px;
+}
+
+/* Fix select & input styling */
+input, textarea, select {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Shimmer loader */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.2) 25%,
+    rgba(255,255,255,0.5) 50%,
+    rgba(255,255,255,0.2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmerMove 1.5s infinite;
+}
+
+@keyframes shimmerMove {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
