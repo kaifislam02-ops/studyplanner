@@ -2,70 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth Font Rendering */
+/* ============================================================
+   GLOBAL RESET + FONT + CORE COLORS
+============================================================ */
 html, body {
   padding: 0;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans), system-ui;
-  background: #f3f4f6;
   color: #1f2937;
+  height: 100%;
 }
 
-/* Fix spacing & layout collapsing */
-*,
-*::before,
-*::after {
+/* Prevent layout collapse */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* Restore container spacing */
 body {
   line-height: 1.5;
   letter-spacing: 0.3px;
 }
 
-/* Universal card design */
+/* ============================================================
+   PERFECT COSMIC BACKGROUND (Main Fix)
+============================================================ */
+.cosmic-bg {
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(93, 0, 255, 0.55), rgba(20, 0, 50, 0.95)),
+    radial-gradient(circle at 80% 80%, rgba(0, 200, 255, 0.45), rgba(0, 0, 40, 0.95));
+  background-attachment: fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* ============================================================
+   GLASS CARD STYLE
+============================================================ */
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
 }
 
 .glass-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
 }
 
-/* Light floating blur circles */
-.floating-bg {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+/* ============================================================
+   INPUTS / SELECTS
+============================================================ */
+input, textarea, select {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border 0.2s ease;
 }
 
-.floating-bg div {
-  position: absolute;
-  width: 380px;
-  height: 380px;
-  border-radius: 50%;
-  filter: blur(150px);
-  opacity: 0.4;
-  animation: float 12s infinite linear;
+input:focus, textarea:focus, select:focus {
+  border: 1px solid #6366f1;
 }
 
-@keyframes float {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-40px); }
-  100% { transform: translateY(0); }
-}
-
-/* Text reset: FIX all color issues */
+/* ============================================================
+   TEXT RESET (Fixing white text issues)
+============================================================ */
 h1, h2, h3, h4, h5, h6 {
   color: #111827;
   font-weight: 700;
@@ -75,17 +83,17 @@ p, span, label, input, select, button, textarea {
   color: #1f2937;
 }
 
-/* Buttons always readable */
+/* ============================================================
+   BUTTON DEFAULT
+============================================================ */
 button {
   cursor: pointer;
   font-weight: 500;
 }
 
-button:disabled {
-  opacity: 0.5;
-}
-
-/* Custom Scrollbar */
+/* ============================================================
+   CUSTOM SCROLLBAR
+============================================================ */
 ::-webkit-scrollbar {
   width: 8px;
   height: 6px;
@@ -99,23 +107,15 @@ button:disabled {
   border-radius: 9999px;
 }
 
-/* Fix select & input styling */
-input, textarea, select {
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 14px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Shimmer loader */
+/* ============================================================
+   SHIMMER LOADER
+============================================================ */
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.2) 25%,
+    rgba(255,255,255,0.22) 25%,
     rgba(255,255,255,0.5) 50%,
-    rgba(255,255,255,0.2) 75%
+    rgba(255,255,255,0.22) 75%
   );
   background-size: 200% 100%;
   animation: shimmerMove 1.5s infinite;

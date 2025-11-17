@@ -26,12 +26,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`
-          cosmic-bg            
+          cosmic-bg
           ${inter.variable}
           ${robotoMono.variable}
           antialiased
           min-h-screen
-          text-gray-900       /* Proper text color for light UI */
+          text-gray-900
         `}
       >
         {children}
