@@ -2,45 +2,31 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const robotoMono = Roboto_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
+const robotoMono = Roboto_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "StudyPlanner",
   description: "Your personal study planner built with Next.js",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
         className={`
           ${inter.variable}
           ${robotoMono.variable}
+          bg-[#0f1127]
+          text-white
           antialiased
           min-h-screen
-          text-gray-100
-          bg-[#0f1127]
           relative
         `}
       >
-        {/* FIXED floating background */}
-        <div className="floating-bg pointer-events-none">
-          <div
-            className="absolute w-72 h-72 rounded-full blur-3xl opacity-30"
-            style={{ background: "#6d5dfc", top: "-80px", left: "-80px" }}
-          />
-          <div
-            className="absolute w-72 h-72 rounded-full blur-3xl opacity-30"
-            style={{ background: "#4fd8ff", bottom: "-80px", right: "-50px" }}
-          />
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div className="absolute w-[380px] h-[380px] bg-[#6d5dfc] blur-[150px] opacity-30 -top-20 -left-20"></div>
+          <div className="absolute w-[380px] h-[380px] bg-[#4fd8ff] blur-[150px] opacity-30 -bottom-20 -right-10"></div>
         </div>
 
         {children}
