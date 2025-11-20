@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
@@ -17,11 +18,7 @@ export const metadata: Metadata = {
   description: "Your personal study planner built with Next.js",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
@@ -35,15 +32,15 @@ export default function RootLayout({
           relative
         `}
       >
-        {/* Floating background effect */}
-        <div className="floating-bg pointer-events-none">
+        {/* Decorative floating blobs (non-interactive) */}
+        <div className="floating-bg pointer-events-none" aria-hidden>
           <div
             className="absolute w-72 h-72 rounded-full blur-3xl opacity-30"
-            style={{ background: "#6d5dfc", top: "-80px", left: "-80px" }}
+            style={{ background: "#6d5dfc", top: -80, left: -80 }}
           />
           <div
             className="absolute w-72 h-72 rounded-full blur-3xl opacity-30"
-            style={{ background: "#4fd8ff", bottom: "-80px", right: "-50px" }}
+            style={{ background: "#4fd8ff", bottom: -80, right: -50 }}
           />
         </div>
 

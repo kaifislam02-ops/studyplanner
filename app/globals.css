@@ -1,41 +1,76 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base reset + font smoothing */
 html, body {
   margin: 0;
   padding: 0;
-  background: #0f1127;
-  color: white;
-  min-height: 100%;
   font-family: var(--font-sans), system-ui;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(180deg,#0b0720 0%,#100827 100%);
+  color: #e6e9ef;
+  min-height: 100%;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+/* Basic box-sizing */
+*, *::before, *::after { box-sizing: border-box; }
 
-/* Smooth glass cards */
+/* Floating background helper */
+.floating-bg div { width: 350px; height: 350px; border-radius: 50%; filter: blur(150px); opacity: 0.35; animation: float 10s infinite ease-in-out; }
+@keyframes float { 0% { transform: translateY(0) } 50% { transform: translateY(-40px) } 100% { transform: translateY(0) } }
+
+/* Glass card (dark) */
 .glass-card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 18px;
-  padding: 20px;
+  background: rgba(7, 10, 20, 0.48);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
 }
 
-/* Fix inputs */
-input, select, textarea {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.2);
-  padding: 10px 14px;
-  border-radius: 12px;
-  color: white;
+/* Inputs, selects, textareas — dark theme */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: 14px;
+  color: #e6e9ef;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 8px 12px;
+  border-radius: 10px;
+  outline: none;
 }
 
-/* Scrollbar */
+/* Dropdown menu dark */
+.dropdown-menu {
+  background: #071025;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: #e6e9ef;
+}
+
+/* Text and headings */
+h1,h2,h3,h4 { color: #fff; font-weight: 700; }
+p, span, label { color: #d9dbe1; }
+
+/* Subtle scroll thumb */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.25);
-  border-radius: 50px;
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+
+/* Dropdown specific */
+.clean-dropdown-btn {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Compact utility fixes */
+.section-box { padding: 16px; border-radius: 12px; }
+.grid-fix { gap: 18px; }
+
+/* Small responsive tweaks */
+@media (max-width: 640px) {
+  .glass-card { padding: 12px; border-radius: 12px; }
 }
