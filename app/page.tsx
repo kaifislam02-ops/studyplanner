@@ -172,7 +172,7 @@ export default function HomePage() {
       const namaz = NAMAZ_SLOTS.find((n) => n.time === h);
       if (namaz) {
         grid.push({
-          subject: `${namaz.name} Prayer`,
+          subject: namaz.name,
           isNamaz: true,
           isCompleted: false,
           hour: h,

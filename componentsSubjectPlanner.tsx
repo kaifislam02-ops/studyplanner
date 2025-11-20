@@ -64,12 +64,11 @@ export const SubjectPlanner: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="space-y-2.5 mb-4">
+      <div className="space-y-2.5 mb-4 min-h-[60px]">
         {subjects.length === 0 ? (
-          <div className="text-center py-8 text-white/50 text-sm">
-            <div className="text-3xl mb-2">📖</div>
+          <div className="text-center py-6 text-white/50 text-sm">
             <p>No subjects added yet</p>
-            <p className="text-xs mt-1 text-white/40">Click "Add Subject" to get started</p>
+            <p className="text-xs mt-1 text-white/40">Click "Add Subject" below</p>
           </div>
         ) : (
           subjects.map((s, i) => (
