@@ -4,11 +4,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Subject, TimetableSlot } from "@/app/page";
 
-// SVG Icons for better consistency (Replacing 🕌, ✓, ⟳, ▾, grab icon)
+// SVG Icons
 const MosqueIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 16H8a1 1 0 01-1-1v-4a1 1 0 011-1h3v6zm4-6h-3v6h3a1 1 0 011 1v4a1 1 0 01-1 1h-3V12zM12 4a8 8 0 00-6.103 3.064C6.67 7.026 8.5 7 8.5 7h7c.07 0 1.33-.026 2.603.064A8 8 0 0012 4z"/>
-    <path fillRule="evenodd" d="M11 12a1 1 0 102 0 1 1 0 00-2 0z" clipRule="evenodd" />
+    <path d="M12 2L4 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-8-5zm0 18c-4.52-1.29-7-5.81-7-10V8.3l7-4.2 7 4.2V10c0 4.19-2.48 8.71-7 10zm-1-6h2v2h-2v-2zm0-6h2v5h-2V8z"/>
   </svg>
 );
 
@@ -20,7 +19,7 @@ const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const RotateIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.995 8.995 0 0120 13a9 9 0 01-3.6 7.5l-2.4-2.4m-.796 3.195l-.797.797M4 12a8.995 8.995 0 003.064 6.942l.583-.583m-1.996-3.996L3.9 14.7M5.795 7.195a9 9 0 011.897-3.21l1.547 1.547m.655-.655l.797-.797M4 12a9 9 0 0018 0" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
   </svg>
 );
 
@@ -60,7 +59,6 @@ export const DraggableSlot: React.FC<Props> = ({
   getColor,
   darkenColor,
 }) => {
-  // We use slot.hour as the ID for sorting
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.hour });
   const isNamaz = slot.isNamaz;
   const isFree = slot.subject === "Free";
@@ -70,8 +68,6 @@ export const DraggableSlot: React.FC<Props> = ({
     transition, 
     opacity: isDragging ? 0.7 : 1, 
     zIndex: isDragging ? 40 : 1,
-    // Add background color based on subject
-    border: isDragging ? "2px dashed #6366F1" : `1px solid ${isNamaz ? "#06b6d4" : "rgba(255,255,255,0.06)"}` 
   };
 
   const [open, setOpen] = useState(false);
@@ -85,62 +81,91 @@ export const DraggableSlot: React.FC<Props> = ({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  // Filter out empty subject names and include "Free" as the first option
   const validUserSubjects = subjects.map(s => s.name.trim()).filter(name => name !== "");
   const options = ["Free", ...COMMON_SUBJECTS, ...validUserSubjects];
   
-  // Custom background for the inner div of the slot
-  const slotBgColor = isNamaz 
-    ? "bg-[#062a30]/30" 
-    : isFree 
-    ? "bg-[#071025]/60" 
-    : `bg-[${darkenColor(getColor(slot.subject, subjects), 90)}]`; // Use a very dark version of the subject color
+  const baseColor = getColor(slot.subject, subjects);
+  const darkBg = darkenColor(baseColor, 85);
 
   return (
-    // Apply styling to the outer div
-    <div ref={setNodeRef} style={style} className={`relative w-full rounded-xl p-0 transition-all ${slot.isCompleted && !isNamaz && !isFree ? "opacity-60" : ""}`} {...(!isNamaz ? attributes : {})}>
-      <div className={`rounded-xl p-3 h-full ${slotBgColor} ${isNamaz ? "border border-cyan-600/50" : "border border-transparent"}`}>
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className={`relative w-full rounded-xl transition-all ${slot.isCompleted && !isNamaz && !isFree ? "opacity-60" : ""}`} 
+      {...(!isNamaz ? attributes : {})}
+    >
+      <div 
+        className={`rounded-xl p-4 h-full border transition-all ${
+          isNamaz 
+            ? "bg-cyan-900/20 border-cyan-500/30" 
+            : isFree 
+            ? "bg-white/[0.02] border-white/[0.04]" 
+            : `border-white/[0.06]`
+        }`}
+        style={{ 
+          backgroundColor: !isNamaz && !isFree ? darkBg : undefined,
+          borderColor: !isNamaz && !isFree ? `${baseColor}40` : undefined
+        }}
+      >
         
         <div className="flex justify-between items-start mb-3">
-          {/* Time Display */}
-          <div className={`text-xs font-medium text-white/80 px-2 py-1 rounded ${isNamaz ? "bg-cyan-800/50" : "bg-white/6"}`}>
+          <div className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg ${
+            isNamaz 
+              ? "bg-cyan-500/20 text-cyan-300" 
+              : "bg-white/10 text-white/90"
+          }`}>
             {formatHour(slot.hour)}
           </div>
 
-          {/* Completion Toggle Button (Fixed icons) */}
           {!isNamaz && !isFree && (
-            <button onClick={() => toggleCompletion(index)} {...listeners} className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${slot.isCompleted ? "bg-green-500 text-white" : "bg-white/10 text-white/90 hover:bg-white/20"}`} title={slot.isCompleted ? "Mark incomplete" : "Mark completed"}>
+            <button 
+              onClick={() => toggleCompletion(index)} 
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                slot.isCompleted 
+                  ? "bg-green-500 text-white shadow-lg shadow-green-500/30" 
+                  : "bg-white/10 text-white/90 hover:bg-white/20"
+              }`} 
+              title={slot.isCompleted ? "Mark incomplete" : "Mark completed"}
+            >
               {slot.isCompleted ? <CheckIcon className="w-4 h-4" /> : <RotateIcon className="w-4 h-4" />}
             </button>
           )}
         </div>
 
         {isNamaz ? (
-          /* NAMAZ SLOT DISPLAY (Fixed icon and text) */
           <div className="text-center py-4">
-            <MosqueIcon className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
-            <div className="font-semibold text-cyan-200">{slot.subject.replace("🔔 ","")}</div>
-            <div className="text-xs text-cyan-300/80">Prayer time</div>
+            <MosqueIcon className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
+            <div className="font-semibold text-lg text-cyan-200">{slot.subject}</div>
+            <div className="text-xs text-cyan-300/70 mt-1">Prayer Time</div>
           </div>
         ) : (
-          /* STUDY SLOT DROPDOWN */
           <div ref={dropdownRef} className="relative">
-            {/* Dropdown Button (Subject Name) */}
-            <button type="button" onClick={() => setOpen(o=>!o)} className="w-full text-left px-3 py-2 rounded-lg transition hover:bg-white/10 clean-dropdown-btn" style={{ backgroundColor: isFree ? "rgba(255,255,255,0.03)" : darkenColor(getColor(slot.subject, subjects), 20) }}>
+            <button 
+              type="button" 
+              onClick={() => setOpen(o=>!o)} 
+              className="w-full text-left px-3 py-2.5 rounded-lg transition hover:bg-white/5"
+              style={{ 
+                backgroundColor: isFree ? "rgba(255,255,255,0.02)" : `${baseColor}20`
+              }}
+            >
               <div className="flex justify-between items-center">
                 <div className="truncate font-medium text-sm">
-                    {/* Explicitly check for 'Free' and rename to 'Available Slot' for clarity */}
                     {slot.subject === "Free" ? "Available Slot" : slot.subject}
                 </div>
-                <ChevronDownIcon className={`w-4 h-4 text-white/60 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDownIcon className={`w-4 h-4 text-white/60 transition-transform ml-2 flex-shrink-0 ${open ? "rotate-180" : ""}`} />
               </div>
             </button>
             {open && (
-              /* Dropdown Menu */
-              <div className="absolute left-0 right-0 mt-2 dropdown-menu rounded shadow-xl max-h-48 overflow-y-auto z-50 transform translate-y-0 opacity-100 transition-all duration-100">
+              <div className="absolute left-0 right-0 mt-2 dropdown-menu rounded-lg shadow-2xl max-h-48 overflow-y-auto z-50">
                 {options.map(opt => (
-                  <button key={opt} onClick={()=>{ updateSlotSubject(index, opt); setOpen(false); }} className={`w-full text-left px-3 py-2 text-sm hover:bg-[#071025] transition ${opt===slot.subject ? "bg-[#071025] font-semibold" : ""}`}>
-                    {opt === "Free" ? "Available Slot (Free)" : opt}
+                  <button 
+                    key={opt} 
+                    onClick={()=>{ updateSlotSubject(index, opt); setOpen(false); }} 
+                    className={`w-full text-left px-3 py-2.5 text-sm hover:bg-white/5 transition ${
+                      opt===slot.subject ? "bg-white/10 font-semibold" : ""
+                    }`}
+                  >
+                    {opt === "Free" ? "Available Slot" : opt}
                   </button>
                 ))}
               </div>
@@ -148,8 +173,14 @@ export const DraggableSlot: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Drag Handle (Fixed icon and listeners) */}
-        {!isNamaz && <div className="absolute bottom-3 right-3 text-white/40 cursor-grab hover:text-white/80 transition" {...listeners}><DragHandleIcon className="w-4 h-4" /></div>}
+        {!isNamaz && (
+          <div 
+            className="absolute bottom-3 right-3 text-white/30 cursor-grab hover:text-white/60 transition" 
+            {...listeners}
+          >
+            <DragHandleIcon className="w-5 h-5" />
+          </div>
+        )}
       </div>
     </div>
   );

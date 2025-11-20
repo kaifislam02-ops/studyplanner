@@ -71,10 +71,8 @@ const getTodayName = () => {
 /* ---------------------------------- MAIN PAGE ---------------------------------- */
 
 export default function HomePage() {
-  const [subjects, setSubjects] = useState<Subject[]>([
-    // FIX: Pre-populate name with a default to prevent empty name being used in queue
-    { id: createId(), name: "Science Revision", hours: "3", priority: "3" } 
-  ]);
+  // FIX: Start with empty subjects array - no pre-populated data
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({});
   const [selectedDay, setSelectedDay] = useState<string>(getTodayName());
@@ -87,7 +85,7 @@ export default function HomePage() {
 
   const getColor = (subject: string, subs: Subject[]): string => {
     if (!subject || subject === "Free") return "#4b5563"; 
-    if (subject.includes("🔔")) return "#06b6d4";
+    if (subject.includes("Prayer")) return "#06b6d4";
 
     const idx = COMMON_SUBJECTS.indexOf(subject);
     if (idx >= 0) return COLORS[idx % COLORS.length];
@@ -118,15 +116,13 @@ export default function HomePage() {
   const addSubject = () => {
     setSubjects((prev) => [
       ...prev,
-      // FIX: Use a default name and hours to prevent empty slots in queue
-      { id: createId(), name: "", hours: "1", priority: "3" }, 
+      { id: createId(), name: "", hours: "2", priority: "3" }, 
     ]);
   };
 
   const handleChange = (i: number, field: keyof Subject, value: string) => {
     setSubjects((prev) => {
       const copy = [...prev];
-      // Basic validation for hours
       if (field === "hours" && parseInt(value) < 0) return prev; 
       
       copy[i][field] = value;
@@ -150,7 +146,6 @@ export default function HomePage() {
   const generateDaily = (): TimetableSlot[] => {
     const grid: TimetableSlot[] = [];
 
-    // FIX: Filter out subjects with empty names or 0 hours to prevent "gggg" (empty subject name) from being queued
     const valid = subjects
       .filter((s) => s.name.trim() && parseInt(s.hours || "0") > 0) 
       .sort(
@@ -164,7 +159,7 @@ export default function HomePage() {
       for (let i = 0; i < hrs; i++) queue.push(s.name);
     });
 
-    // shuffle queue
+    // Shuffle queue for variety
     for (let i = queue.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [queue[i], queue[j]] = [queue[j], queue[i]];
@@ -177,7 +172,7 @@ export default function HomePage() {
       const namaz = NAMAZ_SLOTS.find((n) => n.time === h);
       if (namaz) {
         grid.push({
-          subject: `🔔 ${namaz.name}`,
+          subject: `${namaz.name} Prayer`,
           isNamaz: true,
           isCompleted: false,
           hour: h,
@@ -190,8 +185,6 @@ export default function HomePage() {
       let chosen = "Free";
       let found = false;
 
-      // The logic here attempts to place a subject from the queue, 
-      // avoiding too many consecutive slots of the same subject
       for (let i = 0; i < queue.length; i++) {
         if (queue[i] === curr && consec >= MAX_CONSECUTIVE_SLOTS) continue;
 
@@ -200,7 +193,7 @@ export default function HomePage() {
         break;
       }
 
-      if (!found) chosen = "Free"; // If queue is empty, default to "Free"
+      if (!found) chosen = "Free";
 
       if (chosen === curr) consec++;
       else {
@@ -222,10 +215,11 @@ export default function HomePage() {
   /* ----------------------------- GENERATE WEEKLY ----------------------------- */
 
   const generateWeekly = () => {
-    if (totalRequestedHours === 0)
-      return alert("Please add subjects and set hours before generating a schedule."); // Improved alert message
+    if (totalRequestedHours === 0) {
+      alert("Please add subjects and set hours before generating a schedule.");
+      return;
+    }
 
-    // Check if the requested hours are realistic for a full week
     const maxWeeklyHours = maxPossibleDailyHours * 7;
     if (totalRequestedHours > maxWeeklyHours) {
         if (!window.confirm(`Your requested weekly hours (${totalRequestedHours}h) exceed the maximum possible study time in a week (${maxWeeklyHours}h). The generated schedule will not cover all requested hours. Continue?`)) {
@@ -313,7 +307,7 @@ export default function HomePage() {
     return {
       dailyCompletionRate: rate,
       weeklyTotalStudyHours: weeklyDone,
-      weeklyTargetHours: totalRequestedHours * 7, // Total requested hours across the week
+      weeklyTargetHours: totalRequestedHours,
     };
   }, [weeklyTimetable, totalRequestedHours]);
 
@@ -326,7 +320,7 @@ export default function HomePage() {
       <header className="mb-6">
         <div className="glass-card flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl">
               📚
             </div>
             <div>
@@ -369,10 +363,10 @@ export default function HomePage() {
               className="w-full"
             />
             <div className="mt-3 flex gap-2">
-              <button className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:opacity-90 transition">
+              <button className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:opacity-90 transition rounded-lg px-4 py-2">
                 Save
               </button>
-              <button className="px-4 bg-white/6 hover:bg-white/10 transition">Export</button>
+              <button className="px-4 py-2 bg-white/6 hover:bg-white/10 transition rounded-lg">Export</button>
             </div>
           </div>
         </section>
@@ -382,8 +376,14 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div className="glass-card">
-              <h3 className="text-lg font-semibold">Focus Timer</h3>
-              <p className="mt-4 text-white/70">Pomodoro coming soon…</p>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-2xl">⏱️</div>
+                <div>
+                  <h3 className="text-lg font-semibold">Focus Timer</h3>
+                  <div className="text-sm text-white/70">Coming soon</div>
+                </div>
+              </div>
+              <p className="text-white/60 text-sm">Pomodoro timer will help you stay focused during study sessions.</p>
             </div>
 
             <StudyAnalyticsPanel
@@ -395,7 +395,7 @@ export default function HomePage() {
 
           {/* TIMETABLE DISPLAY */}
           <div ref={timetableRef} className="glass-card">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-semibold">
                   {viewMode === "daily" ? "Daily Schedule" : "Weekly Schedule"}
@@ -403,23 +403,28 @@ export default function HomePage() {
                 <p className="text-sm text-white/70">{selectedDay}</p>
               </div>
 
-              <button
-                className="px-4 py-2 bg-white/6 rounded-lg text-white/80 hover:bg-white/10 transition"
-                onClick={() =>
-                  setViewMode((m) => (m === "daily" ? "weekly" : "daily"))
-                }
-              >
-                {viewMode === "daily" ? "Weekly view" : "Daily view"}
-              </button>
+              <div className="flex gap-2">
+                <select 
+                  value={selectedDay} 
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  className="px-3 py-2 bg-white/6 rounded-lg text-white/80 hover:bg-white/10 transition"
+                >
+                  {WEEK_DAYS.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {!weeklyTimetable[selectedDay] ||
             weeklyTimetable[selectedDay].length === 0 ? (
-              <div className="text-center py-12 text-white/60">
-                No timetable generated yet. Use the **Generate Schedule** button in the left panel.
+              <div className="text-center py-16 text-white/60">
+                <div className="text-4xl mb-4">📅</div>
+                <p className="text-lg mb-2">No schedule generated yet</p>
+                <p className="text-sm">Add subjects in the left panel and click "Generate Schedule"</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {weeklyTimetable[selectedDay].map((slot, idx) => (
                   <DraggableSlot
                     key={slot.hour}
@@ -440,7 +445,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="mt-8 text-center text-white/60">
+      <footer className="mt-8 text-center text-white/60 text-sm">
         Made with ❤️ • StudyFlow
       </footer>
     </div>

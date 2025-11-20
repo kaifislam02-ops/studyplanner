@@ -7,70 +7,175 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-sans), system-ui;
+  font-family: var(--font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg,#0b0720 0%,#100827 100%);
+  background: linear-gradient(180deg, #0b0720 0%, #100827 100%);
   color: #e6e9ef;
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 /* Basic box-sizing */
-*, *::before, *::after { box-sizing: border-box; }
-
-/* Floating background helper */
-.floating-bg div { width: 350px; height: 350px; border-radius: 50%; filter: blur(150px); opacity: 0.35; animation: float 10s infinite ease-in-out; }
-@keyframes float { 0% { transform: translateY(0) } 50% { transform: translateY(-40px) } 100% { transform: translateY(0) } }
-
-/* Glass card (dark) */
-.glass-card {
-  background: rgba(7, 10, 20, 0.48);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  border: 1px solid rgba(255,255,255,0.04);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+*, *::before, *::after { 
+  box-sizing: border-box; 
 }
 
-/* Inputs, selects, textareas — dark theme */
+/* Floating background animation */
+.floating-bg div { 
+  width: 350px; 
+  height: 350px; 
+  border-radius: 50%; 
+  filter: blur(150px); 
+  opacity: 0.3; 
+  animation: float 10s infinite ease-in-out; 
+}
+
+@keyframes float { 
+  0%, 100% { transform: translateY(0) scale(1); } 
+  50% { transform: translateY(-40px) scale(1.1); } 
+}
+
+/* Glass card with improved depth */
+.glass-card {
+  background: rgba(7, 10, 20, 0.5);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(2, 6, 23, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Form elements - unified dark theme */
 input, textarea, select, button {
   font-family: inherit;
   font-size: 14px;
   color: #e6e9ef;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
-  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
   border-radius: 10px;
   outline: none;
+  transition: all 0.2s ease;
 }
 
-/* Dropdown menu dark */
+input:focus, textarea:focus, select:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+input:hover, textarea:hover, select:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Button styles */
+button {
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dropdown menu */
 .dropdown-menu {
-  background: #071025;
-  border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(7, 16, 37, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e6e9ef;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* Text and headings */
-h1,h2,h3,h4 { color: #fff; font-weight: 700; }
-p, span, label { color: #d9dbe1; }
-
-/* Subtle scroll thumb */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
-
-/* Dropdown specific */
-.clean-dropdown-btn {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
+.dropdown-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
-/* Compact utility fixes */
-.section-box { padding: 16px; border-radius: 12px; }
-.grid-fix { gap: 18px; }
+/* Typography */
+h1, h2, h3, h4, h5, h6 { 
+  color: #fff; 
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
 
-/* Small responsive tweaks */
+p, span, label { 
+  color: #d9dbe1; 
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { 
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb { 
+  background: rgba(255, 255, 255, 0.1); 
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Select dropdown arrow fix */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 36px;
+}
+
+/* Utility classes */
+.section-box { 
+  padding: 16px; 
+  border-radius: 12px; 
+}
+
+/* Responsive adjustments */
 @media (max-width: 640px) {
-  .glass-card { padding: 12px; border-radius: 12px; }
+  .glass-card { 
+    padding: 16px; 
+    border-radius: 14px; 
+  }
+  
+  input, textarea, select, button {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
