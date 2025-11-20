@@ -56,44 +56,45 @@ export const SubjectPlanner: React.FC<Props> = ({
       </div>
 
       {subjects.length > 0 && (
-        <div className="flex gap-2 items-center text-xs font-semibold text-white/50 mb-2 px-1">
-          <div className="flex-1">SUBJECT</div>
-          <div className="w-20 text-center">HRS/WK</div>
-          <div className="w-32 text-center">PRIORITY</div>
-          <div className="w-8"></div>
+        <div className="grid grid-cols-12 gap-2 items-center text-xs font-semibold text-white/50 mb-2 px-1">
+          <div className="col-span-5">SUBJECT</div>
+          <div className="col-span-3 text-center">HRS/WK</div>
+          <div className="col-span-3 text-center">PRIORITY</div>
+          <div className="col-span-1"></div>
         </div>
       )}
 
-      <div className="space-y-3 mb-4">
+      <div className="space-y-2.5 mb-4">
         {subjects.length === 0 ? (
           <div className="text-center py-8 text-white/50 text-sm">
             <div className="text-3xl mb-2">📖</div>
             <p>No subjects added yet</p>
-            <p className="text-xs mt-1">Click "Add Subject" to get started</p>
+            <p className="text-xs mt-1 text-white/40">Click "Add Subject" to get started</p>
           </div>
         ) : (
           subjects.map((s, i) => (
-            <div key={s.id} className="flex gap-2 items-center">
+            <div key={s.id} className="grid grid-cols-12 gap-2 items-center">
               <input 
                 value={s.name} 
                 onChange={(e)=>handleChange(i,"name", e.target.value)} 
-                placeholder="e.g., Mathematics" 
-                className="flex-1" 
+                placeholder="Subject name" 
+                className="col-span-5 text-sm" 
               />
               
               <input 
                 value={s.hours} 
                 onChange={(e)=>handleChange(i,"hours", e.target.value)} 
                 type="number" 
-                min={0} 
+                min={1} 
+                max={20}
                 placeholder="5" 
-                className="w-20 text-center" 
+                className="col-span-3 text-center text-sm" 
               />
               
               <select 
                 value={s.priority || "3"} 
                 onChange={(e)=>handleChange(i,"priority", e.target.value)} 
-                className="w-32"
+                className="col-span-3 text-sm"
               >
                 <option value="3">High</option>
                 <option value="2">Medium</option>
@@ -102,7 +103,7 @@ export const SubjectPlanner: React.FC<Props> = ({
               
               <button 
                 onClick={()=>removeSubject(s.id)} 
-                className="p-2 w-8 h-8 rounded-lg text-red-400 hover:bg-red-500/10 transition flex items-center justify-center"
+                className="col-span-1 p-2 h-9 rounded-lg text-red-400 hover:bg-red-500/10 transition flex items-center justify-center"
                 title="Remove subject"
               >
                 <TrashIcon className="w-4 h-4" />
@@ -115,7 +116,7 @@ export const SubjectPlanner: React.FC<Props> = ({
       <div className="flex gap-3">
         <button 
           onClick={addSubject} 
-          className="flex-1 text-white/80 hover:bg-white/10 transition rounded-lg px-4 py-2.5 flex items-center justify-center gap-2"
+          className="flex-1 text-white/80 hover:bg-white/10 transition rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-medium"
         >
           <PlusIcon className="w-4 h-4" />
           Add Subject
@@ -123,7 +124,7 @@ export const SubjectPlanner: React.FC<Props> = ({
         <button 
           onClick={generateWeeklyTimetable} 
           disabled={totalRequestedHours === 0} 
-          className={`flex-1 transition rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 ${
+          className={`flex-1 transition rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-medium ${
             totalRequestedHours === 0 
               ? "bg-gray-700/50 cursor-not-allowed text-white/40" 
               : "bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 text-white shadow-lg"
@@ -147,12 +148,13 @@ export const SubjectPlanner: React.FC<Props> = ({
                 {totalRequestedHours}h
               </div>
               {isOverBudget && (
-                <div className="text-xs text-red-300 mt-1">Exceeds available time!</div>
+                <div className="text-xs text-red-300 mt-1">⚠️ Exceeds limit!</div>
               )}
             </div>
             <div className="p-3 bg-white/5 rounded-lg">
               <div className="text-xs text-white/60 mb-1">Max Daily Slots</div>
               <div className="text-xl font-bold text-white">{maxPossibleDailyHours}h</div>
+              <div className="text-xs text-white/40 mt-1">Per day available</div>
             </div>
           </div>
         </div>

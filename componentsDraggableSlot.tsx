@@ -4,22 +4,16 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Subject, TimetableSlot } from "@/app/page";
 
-// SVG Icons
+// Simplified SVG Icons
 const MosqueIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2L4 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-8-5zm0 18c-4.52-1.29-7-5.81-7-10V8.3l7-4.2 7 4.2V10c0 4.19-2.48 8.71-7 10zm-1-6h2v2h-2v-2zm0-6h2v5h-2V8z"/>
+    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
   </svg>
 );
 
 const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-);
-
-const RotateIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
   </svg>
 );
 
@@ -34,7 +28,6 @@ const DragHandleIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16"></path>
     </svg>
 );
-
 
 type Props = {
   slot: TimetableSlot;
@@ -108,7 +101,7 @@ export const DraggableSlot: React.FC<Props> = ({
         }}
       >
         
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex justify-between items-center mb-3">
           <div className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg ${
             isNamaz 
               ? "bg-cyan-500/20 text-cyan-300" 
@@ -120,39 +113,41 @@ export const DraggableSlot: React.FC<Props> = ({
           {!isNamaz && !isFree && (
             <button 
               onClick={() => toggleCompletion(index)} 
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                 slot.isCompleted 
                   ? "bg-green-500 text-white shadow-lg shadow-green-500/30" 
-                  : "bg-white/10 text-white/90 hover:bg-white/20"
+                  : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
               }`} 
               title={slot.isCompleted ? "Mark incomplete" : "Mark completed"}
             >
-              {slot.isCompleted ? <CheckIcon className="w-4 h-4" /> : <RotateIcon className="w-4 h-4" />}
+              {slot.isCompleted && <CheckIcon className="w-4 h-4" />}
             </button>
           )}
         </div>
 
         {isNamaz ? (
-          <div className="text-center py-4">
-            <MosqueIcon className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
-            <div className="font-semibold text-lg text-cyan-200">{slot.subject}</div>
-            <div className="text-xs text-cyan-300/70 mt-1">Prayer Time</div>
+          <div className="flex items-center gap-3 py-2">
+            <MosqueIcon className="w-6 h-6 text-cyan-400 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold text-white">{slot.subject}</div>
+              <div className="text-xs text-cyan-300/70 mt-0.5">Prayer Time</div>
+            </div>
           </div>
         ) : (
           <div ref={dropdownRef} className="relative">
             <button 
               type="button" 
               onClick={() => setOpen(o=>!o)} 
-              className="w-full text-left px-3 py-2.5 rounded-lg transition hover:bg-white/5"
+              className="w-full text-left px-3 py-2.5 rounded-lg transition hover:bg-white/5 group"
               style={{ 
                 backgroundColor: isFree ? "rgba(255,255,255,0.02)" : `${baseColor}20`
               }}
             >
-              <div className="flex justify-between items-center">
-                <div className="truncate font-medium text-sm">
+              <div className="flex justify-between items-center gap-2">
+                <div className="truncate font-medium text-sm flex-1">
                     {slot.subject === "Free" ? "Available Slot" : slot.subject}
                 </div>
-                <ChevronDownIcon className={`w-4 h-4 text-white/60 transition-transform ml-2 flex-shrink-0 ${open ? "rotate-180" : ""}`} />
+                <ChevronDownIcon className={`w-4 h-4 text-white/40 group-hover:text-white/60 transition-all flex-shrink-0 ${open ? "rotate-180" : ""}`} />
               </div>
             </button>
             {open && (
@@ -175,10 +170,10 @@ export const DraggableSlot: React.FC<Props> = ({
 
         {!isNamaz && (
           <div 
-            className="absolute bottom-3 right-3 text-white/30 cursor-grab hover:text-white/60 transition" 
+            className="absolute bottom-3 right-3 text-white/20 cursor-grab hover:text-white/40 transition" 
             {...listeners}
           >
-            <DragHandleIcon className="w-5 h-5" />
+            <DragHandleIcon className="w-4 h-4" />
           </div>
         )}
       </div>
