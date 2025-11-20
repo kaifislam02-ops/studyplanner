@@ -2,56 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Keep Tailwind defaults intact */
+/* Base reset */
 html, body {
-  padding: 0;
   margin: 0;
+  padding: 0;
   font-family: var(--font-sans), system-ui;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #1a1f35; /* dark cosmic base */
+  color: #e5e7eb;
+  min-height: 100%;
 }
 
-/* 🌌 Cosmic Gradient Background */
-.cosmic-bg {
-  background: radial-gradient(circle at 20% 20%, #8b5cf6 0%, #4f46e5 40%, #1e1b4b 100%);
-  min-height: 100vh;
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-/* Real Glass Effect */
+/* --- PERFECT GLASS CARD --- */
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  padding: 20px;           /* FIX MISSING PADDING */
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  transition: 0.25s ease;
 }
 
-/* Inputs */
+.glass-card:hover {
+  box-shadow: 0 12px 45px rgba(0,0,0,0.35);
+}
+
+/* --- INPUT FIX --- */
 input, select, textarea {
-  @apply bg-white/20 text-white placeholder-white/50 rounded-xl border border-white/20 px-4 py-2;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 10px 14px;
+  color: white;
+  border-radius: 12px;
   backdrop-filter: blur(10px);
+  width: 100%;
 }
 
-/* Fix headings / text (do NOT override tailwind defaults) */
-h1, h2, h3, h4, h5, h6 {
-  @apply text-white font-bold;
+/* Fix icons inside select */
+select option {
+  background: #1b1f32;
+  color: white;
 }
 
+/* Label & text color fix */
 p, span, label {
-  @apply text-white/90;
+  color: #e5e7eb;
+}
+
+h1, h2, h3, h4 {
+  color: white;
+  font-weight: 700;
 }
 
 /* Buttons */
 button {
-  @apply text-white;
+  color: white;
+  font-weight: 500;
+}
+
+button:disabled {
+  opacity: 0.5;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
-  border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 20px;
+}
+
+/* Background floating effect */
+.floating-bg div {
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  filter: blur(150px);
+  opacity: 0.35;
+  animation: float 10s infinite ease-in-out;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-40px); }
+  100% { transform: translateY(0); }
+}
+
+/* Prevent collapsed UI columns */
+.section-box {
+  padding: 20px;
+  border-radius: 16px;
+}
+
+/* Fix card grid spacing */
+.grid-fix {
+  gap: 20px;
 }
