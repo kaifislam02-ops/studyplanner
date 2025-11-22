@@ -314,18 +314,6 @@ export default function HomePage() {
     }
   };
 
-  // Show loading screen while auth initializes
-  if (authLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0A0E1A] text-white">
-        <div className="text-center">
-          <div className="text-4xl mb-4">📚</div>
-          <div className="text-xl font-bold">Loading StudyFlow...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'} ${darkMode ? 'text-white' : 'text-gray-900'} overflow-hidden`}>
       {/* Sidebar */}
