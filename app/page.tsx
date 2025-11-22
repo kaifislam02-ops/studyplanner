@@ -1,453 +1,402 @@
-// app/page.tsx
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
-import DraggableSlot from "@/componentsDraggableSlot";
-import SubjectPlanner from "@/componentsSubjectPlanner";
-import StudyAnalyticsPanel from "@/componentsStudyAnalyticsPanel";
-
-/* ---------------------------------- CONSTANTS ---------------------------------- */
-
-const COMMON_SUBJECTS: string[] = [
-  "Mathematics","Physics","Chemistry","Biology","English","Computer Science",
-  "History","Geography","Political Science","Economics","Psychology","Sociology",
-  "Hindi","Urdu","Physical Education","Art","Music","Philosophy","Environmental Science",
-];
-
-const WEEK_DAYS: string[] = [
-  "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
-];
-
-const NAMAZ_SLOTS = [
-  { name: "Fajr", time: 4 },
-  { name: "Zuhr", time: 12 },
-  { name: "Asr", time: 17 },
-  { name: "Maghrib", time: 19 },
-  { name: "Isha", time: 20 },
-];
-
-const DAY_HOURS = Array.from({ length: 20 }, (_, i) => i + 4);
-const TOTAL_DAILY_STUDY_SLOTS = DAY_HOURS.length - NAMAZ_SLOTS.length;
-const MAX_CONSECUTIVE_SLOTS = 3;
-
-const COLORS = [
-  "#6366F1","#EC4899","#8B5CF6","#10B981","#F59E0B","#EF4444","#06B6D4"
-];
-
-/* ---------------------------------- TYPES ---------------------------------- */
+import { useState, useMemo, useEffect } from "react";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
+import Timeline from "@/components/Timeline";
+import WeekView from "@/components/WeekView";
+import Analytics from "@/components/Analytics";
+import TaskModal from "@/components/TaskModal";
+import PomodoroTimer from "@/components/PomodoroTimer";
+import TemplateModal from "@/components/TemplateModal";
 
 export type Subject = {
   id: string;
   name: string;
-  hours: string;
-  priority: string;
+  color: string;
+  weeklyHours: number;
+  priority: number; // 1-3
 };
 
-export type TimetableSlot = {
-  subject: string;
-  isNamaz: boolean;
-  isCompleted: boolean;
-  hour: number;
+export type Task = {
+  id: string;
+  title: string;
+  subjectId: string;
+  date: string;
+  startTime: number;
+  endTime: number;
+  completed: boolean;
+  notes?: string;
+  isRecurring?: boolean;
+  recurringDays?: number[]; // 0-6 (Sun-Sat)
 };
 
-export type WeeklyTimetable = {
-  [day: string]: TimetableSlot[];
+export type Template = {
+  id: string;
+  name: string;
+  tasks: Omit<Task, "id" | "date">[];
 };
 
-/* ---------------------------------- UTILITIES ---------------------------------- */
-
-const createId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
-
-const formatHour = (h: number): string => {
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour} ${ampm}`;
-};
-
-const getTodayName = () => {
-  return new Date().toLocaleDateString("en-US", { weekday: "long" });
-};
-
-/* ---------------------------------- MAIN PAGE ---------------------------------- */
+const PRAYER_TIMES = [
+  { name: "Fajr", time: 5 },
+  { name: "Dhuhr", time: 13 },
+  { name: "Asr", time: 16 },
+  { name: "Maghrib", time: 18 },
+  { name: "Isha", time: 20 },
+];
 
 export default function HomePage() {
-  // FIX: Start with empty subjects array - no pre-populated data
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [view, setView] = useState<"day" | "week" | "analytics">("day");
+  const [prayerEnabled, setPrayerEnabled] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
+  
+  const [subjects, setSubjects] = useState<Subject[]>([
+    { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
+    { id: "2", name: "Physics", color: "#8B5CF6", weeklyHours: 8, priority: 3 },
+    { id: "3", name: "Chemistry", color: "#EC4899", weeklyHours: 6, priority: 2 },
+  ]);
+  
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [modalOpen, setModalOpen] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [pomodoroOpen, setPomodoroOpen] = useState(false);
 
-  const [weeklyTimetable, setWeeklyTimetable] = useState<WeeklyTimetable>({});
-  const [selectedDay, setSelectedDay] = useState<string>(getTodayName());
-  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
-  const [timetableName, setTimetableName] = useState<string>("");
+  // Load from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("studyflow-data");
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.subjects) setSubjects(data.subjects);
+      if (data.tasks) setTasks(data.tasks);
+      if (data.templates) setTemplates(data.templates);
+      if (data.prayerEnabled !== undefined) setPrayerEnabled(data.prayerEnabled);
+    }
+  }, []);
 
-  const timetableRef = useRef<HTMLDivElement | null>(null);
+  // Save to localStorage
+  useEffect(() => {
+    localStorage.setItem("studyflow-data", JSON.stringify({
+      subjects,
+      tasks,
+      templates,
+      prayerEnabled,
+    }));
+  }, [subjects, tasks, templates, prayerEnabled]);
 
-  /* ----------------------------- COLOR UTILITIES ----------------------------- */
+  // Get tasks for selected date (including recurring)
+  const todaysTasks = useMemo(() => {
+    const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+    return tasks.filter(task => {
+      if (task.date === selectedDate) return true;
+      if (task.isRecurring && task.recurringDays?.includes(dayOfWeek)) return true;
+      return false;
+    });
+  }, [tasks, selectedDate]);
 
-  const getColor = (subject: string, subs: Subject[]): string => {
-    if (!subject || subject === "Free") return "#4b5563"; 
-    if (subject.includes("Prayer")) return "#06b6d4";
+  // Calculate comprehensive stats
+  const stats = useMemo(() => {
+    const today = todaysTasks;
+    const completed = today.filter(t => t.completed).length;
+    const total = today.length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    const idx = COMMON_SUBJECTS.indexOf(subject);
-    if (idx >= 0) return COLORS[idx % COLORS.length];
+    // Weekly stats
+    const startOfWeek = getStartOfWeek(new Date());
+    const weekTasks = tasks.filter(task => {
+      const taskDate = new Date(task.date + 'T00:00:00');
+      return taskDate >= startOfWeek && taskDate < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+    });
+    
+    const weeklyHours = weekTasks.reduce((sum, task) => {
+      return sum + (task.completed ? task.endTime - task.startTime : 0);
+    }, 0);
 
-    const customIdx = subs.findIndex((s) => s.name === subject);
-    if (customIdx >= 0) return COLORS[customIdx % COLORS.length];
-
-    return "#6B7280";
-  };
-
-  const darkenColor = (color: string, percent: number): string => {
-    if (!color.startsWith("#")) return color;
-
-    let [r, g, b] = (color.match(/\w\w/g) || []).map((h) => parseInt(h, 16));
-    const p = 1 - percent / 100;
-
-    r = Math.floor(r * p);
-    g = Math.floor(g * p);
-    b = Math.floor(b * p);
-
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b)
-      .toString(16)
-      .slice(1)}`;
-  };
-
-  /* ----------------------------- SUBJECT MANAGEMENT ----------------------------- */
-
-  const addSubject = () => {
-    setSubjects((prev) => [
-      ...prev,
-      { id: createId(), name: "", hours: "2", priority: "3" }, 
-    ]);
-  };
-
-  const handleChange = (i: number, field: keyof Subject, value: string) => {
-    setSubjects((prev) => {
-      const copy = [...prev];
-      if (field === "hours" && parseInt(value) < 0) return prev; 
+    // Streak calculation
+    let streak = 0;
+    let checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() - 1);
+    
+    while (streak < 30) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const dayTasks = tasks.filter(t => t.date === dateStr);
+      const dayCompleted = dayTasks.filter(t => t.completed).length;
       
-      copy[i][field] = value;
-      return copy;
-    });
-  };
-
-  const removeSubject = (id: string) => {
-    setSubjects((prev) => prev.filter((s) => s.id !== id));
-  };
-
-  const totalRequestedHours = subjects.reduce(
-    (s, sub) => s + (parseInt(sub.hours || "0") || 0),
-    0
-  );
-
-  const maxPossibleDailyHours = TOTAL_DAILY_STUDY_SLOTS;
-
-  /* ------------------------------ GENERATE DAILY ------------------------------ */
-
-  const generateDaily = (): TimetableSlot[] => {
-    const grid: TimetableSlot[] = [];
-
-    const valid = subjects
-      .filter((s) => s.name.trim() && parseInt(s.hours || "0") > 0) 
-      .sort(
-        (a, b) => parseInt(b.priority || "0") - parseInt(a.priority || "0")
-      );
-
-    let queue: string[] = [];
-
-    valid.forEach((s) => {
-      const hrs = parseInt(s.hours || "0");
-      for (let i = 0; i < hrs; i++) queue.push(s.name);
-    });
-
-    // Shuffle queue for variety
-    for (let i = queue.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [queue[i], queue[j]] = [queue[j], queue[i]];
+      if (dayTasks.length === 0 || dayCompleted === 0) break;
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
     }
 
-    let curr = "";
-    let consec = 0;
-
-    DAY_HOURS.forEach((h) => {
-      const namaz = NAMAZ_SLOTS.find((n) => n.time === h);
-      if (namaz) {
-        grid.push({
-          subject: namaz.name,
-          isNamaz: true,
-          isCompleted: false,
-          hour: h,
-        });
-        curr = "";
-        consec = 0;
-        return;
+    // Subject breakdown
+    const subjectHours: { [key: string]: number } = {};
+    weekTasks.forEach(task => {
+      if (task.completed) {
+        const hours = task.endTime - task.startTime;
+        subjectHours[task.subjectId] = (subjectHours[task.subjectId] || 0) + hours;
       }
-
-      let chosen = "Free";
-      let found = false;
-
-      for (let i = 0; i < queue.length; i++) {
-        if (queue[i] === curr && consec >= MAX_CONSECUTIVE_SLOTS) continue;
-
-        chosen = queue.splice(i, 1)[0];
-        found = true;
-        break;
-      }
-
-      if (!found) chosen = "Free";
-
-      if (chosen === curr) consec++;
-      else {
-        curr = chosen;
-        consec = chosen === "Free" ? 0 : 1;
-      }
-
-      grid.push({
-        subject: chosen,
-        isNamaz: false,
-        isCompleted: false,
-        hour: h,
-      });
     });
 
-    return grid;
-  };
+    return {
+      completionRate,
+      weeklyHours,
+      streak,
+      totalTasks: total,
+      completedTasks: completed,
+      subjectHours,
+    };
+  }, [todaysTasks, tasks]);
 
-  /* ----------------------------- GENERATE WEEKLY ----------------------------- */
-
-  const generateWeekly = () => {
-    if (totalRequestedHours === 0) {
-      alert("Please add subjects and set hours before generating a schedule.");
+  // Auto-generate schedule
+  const generateSchedule = () => {
+    if (subjects.length === 0) {
+      alert("Add subjects first!");
       return;
     }
 
-    const maxWeeklyHours = maxPossibleDailyHours * 7;
-    if (totalRequestedHours > maxWeeklyHours) {
-        if (!window.confirm(`Your requested weekly hours (${totalRequestedHours}h) exceed the maximum possible study time in a week (${maxWeeklyHours}h). The generated schedule will not cover all requested hours. Continue?`)) {
-            return;
+    const newTasks: Task[] = [];
+    const startDate = new Date(selectedDate + 'T00:00:00');
+    
+    // Generate for 7 days
+    for (let day = 0; day < 7; day++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + day);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayOfWeek = currentDate.getDay();
+
+      // Available hours (excluding prayers)
+      const availableSlots: number[] = [];
+      for (let hour = 6; hour < 23; hour++) {
+        const isPrayer = prayerEnabled && PRAYER_TIMES.some(p => p.time === hour);
+        if (!isPrayer) availableSlots.push(hour);
+      }
+
+      // Distribute subjects by priority
+      const sortedSubjects = [...subjects].sort((a, b) => b.priority - a.priority);
+      let slotIndex = 0;
+
+      sortedSubjects.forEach(subject => {
+        const hoursPerDay = Math.ceil(subject.weeklyHours / 7);
+        
+        for (let h = 0; h < hoursPerDay && slotIndex < availableSlots.length; h++) {
+          const startTime = availableSlots[slotIndex];
+          const endTime = Math.min(startTime + 2, 23); // Max 2-hour blocks
+
+          newTasks.push({
+            id: `gen-${Date.now()}-${slotIndex}`,
+            title: `${subject.name} Study`,
+            subjectId: subject.id,
+            date: dateStr,
+            startTime,
+            endTime,
+            completed: false,
+          });
+
+          slotIndex++;
         }
+      });
     }
 
-    const week: WeeklyTimetable = {};
-
-    WEEK_DAYS.forEach((d) => (week[d] = generateDaily()));
-
-    setWeeklyTimetable(week);
-    setViewMode("daily");
-    setSelectedDay(getTodayName());
+    setTasks([...tasks, ...newTasks]);
+    alert(`Generated ${newTasks.length} tasks for the week!`);
   };
 
-  /* ----------------------------- TIMETABLE ACTIONS ----------------------------- */
-
-  const toggleCompletion = (index: number) => {
-    setWeeklyTimetable((prev) => {
-      const day = prev[selectedDay] || [];
-      const copy = [...day];
-
-      if (!copy[index] || copy[index].isNamaz) return prev;
-
-      copy[index] = {
-        ...copy[index],
-        isCompleted: !copy[index].isCompleted,
-      };
-
-      return { ...prev, [selectedDay]: copy };
-    });
+  // Template handlers
+  const saveAsTemplate = () => {
+    const templateTasks = todaysTasks.map(({ id, date, ...rest }) => rest);
+    const name = prompt("Template name:");
+    if (name) {
+      setTemplates([...templates, {
+        id: Date.now().toString(),
+        name,
+        tasks: templateTasks,
+      }]);
+      alert("Template saved!");
+    }
   };
 
-  const updateSlotSubject = (index: number, subject: string) => {
-    setWeeklyTimetable((prev) => {
-      const day = prev[selectedDay] || [];
-      const copy = [...day];
-
-      if (!copy[index]) return prev;
-
-      copy[index] = {
-        ...copy[index],
-        subject,
-        isCompleted: subject === "Free" ? false : copy[index].isCompleted,
-      };
-
-      return { ...prev, [selectedDay]: copy };
-    });
+  const applyTemplate = (template: Template) => {
+    const newTasks = template.tasks.map(task => ({
+      ...task,
+      id: `tmpl-${Date.now()}-${Math.random()}`,
+      date: selectedDate,
+    }));
+    setTasks([...tasks, ...newTasks]);
+    setTemplateModalOpen(false);
+    alert(`Applied template: ${template.name}`);
   };
 
-  /* ----------------------------- ANALYTICS ----------------------------- */
-
-  const {
-    dailyCompletionRate,
-    weeklyTotalStudyHours,
-    weeklyTargetHours,
-  } = useMemo(() => {
-    const today = weeklyTimetable[getTodayName()] || [];
-
-    let totalToday = 0,
-      doneToday = 0;
-
-    today.forEach((slot) => {
-      if (!slot.isNamaz && slot.subject !== "Free") {
-        totalToday++;
-        if (slot.isCompleted) doneToday++;
-      }
-    });
-
-    const rate = totalToday ? (doneToday / totalToday) * 100 : 0;
-
-    let weeklyDone = 0;
-    Object.values(weeklyTimetable).forEach((day) =>
-      day.forEach((slot) => {
-        if (
-          !slot.isNamaz &&
-          slot.subject !== "Free" &&
-          slot.isCompleted
-        )
-          weeklyDone++;
-      })
-    );
-
-    return {
-      dailyCompletionRate: rate,
-      weeklyTotalStudyHours: weeklyDone,
-      weeklyTargetHours: totalRequestedHours,
+  // Export schedule
+  const exportSchedule = () => {
+    const data = {
+      subjects,
+      tasks,
+      exportDate: new Date().toISOString(),
     };
-  }, [weeklyTimetable, totalRequestedHours]);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `studyflow-schedule-${selectedDate}.json`;
+    a.click();
+  };
 
-  /* -------------------------------- UI RENDER -------------------------------- */
+  // Task handlers
+  const handleAddTask = () => {
+    setEditingTask(null);
+    setModalOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  };
+
+  const handleSaveTask = (taskData: Omit<Task, "id">) => {
+    if (editingTask) {
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...taskData, id: t.id } : t));
+    } else {
+      setTasks([...tasks, { ...taskData, id: Date.now().toString() }]);
+    }
+    setModalOpen(false);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    if (confirm("Delete this task?")) {
+      setTasks(tasks.filter(t => t.id !== taskId));
+    }
+  };
+
+  const handleToggleComplete = (taskId: string) => {
+    setTasks(tasks.map(t => 
+      t.id === taskId ? { ...t, completed: !t.completed } : t
+    ));
+  };
+
+  const handleAddSubject = (subject: Omit<Subject, "id">) => {
+    setSubjects([...subjects, { ...subject, id: Date.now().toString() }]);
+  };
+
+  const handleDeleteSubject = (subjectId: string) => {
+    if (confirm("Delete this subject and all its tasks?")) {
+      setSubjects(subjects.filter(s => s.id !== subjectId));
+      setTasks(tasks.filter(t => t.subjectId !== subjectId));
+    }
+  };
 
   return (
-    <div className="min-h-screen px-6 py-8 max-w-7xl mx-auto">
-      
-      {/* ------------------- HEADER ------------------- */}
-      <header className="mb-6">
-        <div className="glass-card flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl">
-              📚
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">StudyFlow</h1>
-              <p className="text-sm text-white/70">
-                Smart scheduling for focused learning
-              </p>
-            </div>
-          </div>
+    <div className={`flex h-screen ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'} ${darkMode ? 'text-white' : 'text-gray-900'} overflow-hidden`}>
+      {/* Sidebar */}
+      <Sidebar
+        open={sidebarOpen}
+        subjects={subjects}
+        stats={stats}
+        selectedDate={selectedDate}
+        templates={templates}
+        darkMode={darkMode}
+        onDateChange={setSelectedDate}
+        onAddSubject={handleAddSubject}
+        onDeleteSubject={handleDeleteSubject}
+        onOpenTemplates={() => setTemplateModalOpen(true)}
+        onOpenPomodoro={() => setPomodoroOpen(true)}
+      />
 
-          <button className="px-4 py-2 bg-white/6 rounded-lg text-white/80 hover:bg-white/10 transition">
-            Sign In
-          </button>
-        </div>
-      </header>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header
+          selectedDate={selectedDate}
+          tasksCount={todaysTasks.length}
+          totalHours={todaysTasks.reduce((sum, t) => sum + (t.endTime - t.startTime), 0)}
+          view={view}
+          darkMode={darkMode}
+          onAddTask={handleAddTask}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onViewChange={setView}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onGenerateSchedule={generateSchedule}
+          onSaveTemplate={saveAsTemplate}
+          onExport={exportSchedule}
+          onTogglePrayer={() => setPrayerEnabled(!prayerEnabled)}
+          prayerEnabled={prayerEnabled}
+        />
 
-      {/* ------------------- MAIN GRID ------------------- */}
-
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* LEFT PANEL */}
-        <section className="space-y-6">
-          <SubjectPlanner
-            subjects={subjects}
-            addSubject={addSubject}
-            handleChange={handleChange}
-            removeSubject={removeSubject}
-            generateWeeklyTimetable={generateWeekly}
-            totalRequestedHours={totalRequestedHours}
-            maxPossibleDailyHours={maxPossibleDailyHours}
-            COMMON_SUBJECTS={COMMON_SUBJECTS}
-          />
-
-          <div className="glass-card">
-            <p className="text-sm text-white/70 mb-3">Save & Export</p>
-            <input
-              value={timetableName}
-              onChange={(e) => setTimetableName(e.target.value)}
-              placeholder="Timetable name (e.g., Spring 2026)"
-              className="w-full"
+        <main className={`flex-1 overflow-y-auto p-6 ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'}`}>
+          {view === "day" && (
+            <Timeline
+              tasks={todaysTasks}
+              subjects={subjects}
+              prayerTimes={prayerEnabled ? PRAYER_TIMES : []}
+              darkMode={darkMode}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onToggleComplete={handleToggleComplete}
             />
-            <div className="mt-3 flex gap-2">
-              <button className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:opacity-90 transition rounded-lg px-4 py-2">
-                Save
-              </button>
-              <button className="px-4 py-2 bg-white/6 hover:bg-white/10 transition rounded-lg">Export</button>
-            </div>
-          </div>
-        </section>
+          )}
 
-        {/* RIGHT PANEL */}
-        <section className="lg:col-span-2 space-y-6">
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="glass-card">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl flex items-center justify-center text-2xl">⏱️</div>
-                <div>
-                  <h3 className="text-lg font-semibold">Focus Timer</h3>
-                  <div className="text-sm text-white/70">Coming soon</div>
-                </div>
-              </div>
-              <p className="text-white/60 text-sm">Pomodoro timer will help you stay focused during study sessions.</p>
-            </div>
-
-            <StudyAnalyticsPanel
-              dailyCompletionRate={dailyCompletionRate}
-              weeklyTotalStudyHours={weeklyTotalStudyHours}
-              weeklyTargetHours={weeklyTargetHours}
+          {view === "week" && (
+            <WeekView
+              tasks={tasks}
+              subjects={subjects}
+              selectedDate={selectedDate}
+              prayerTimes={prayerEnabled ? PRAYER_TIMES : []}
+              darkMode={darkMode}
+              onDateChange={setSelectedDate}
+              onEditTask={handleEditTask}
             />
-          </div>
+          )}
 
-          {/* TIMETABLE DISPLAY */}
-          <div ref={timetableRef} className="glass-card">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-semibold">
-                  {viewMode === "daily" ? "Daily Schedule" : "Weekly Schedule"}
-                </h3>
-                <p className="text-sm text-white/70">{selectedDay}</p>
-              </div>
+          {view === "analytics" && (
+            <Analytics
+              tasks={tasks}
+              subjects={subjects}
+              stats={stats}
+              darkMode={darkMode}
+            />
+          )}
+        </main>
+      </div>
 
-              <div className="flex gap-2">
-                <select 
-                  value={selectedDay} 
-                  onChange={(e) => setSelectedDay(e.target.value)}
-                  className="px-3 py-2 bg-white/6 rounded-lg text-white/80 hover:bg-white/10 transition"
-                >
-                  {WEEK_DAYS.map(day => (
-                    <option key={day} value={day}>{day}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+      {/* Modals */}
+      {modalOpen && (
+        <TaskModal
+          task={editingTask}
+          subjects={subjects}
+          selectedDate={selectedDate}
+          darkMode={darkMode}
+          onSave={handleSaveTask}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
 
-            {!weeklyTimetable[selectedDay] ||
-            weeklyTimetable[selectedDay].length === 0 ? (
-              <div className="text-center py-16 text-white/60">
-                <div className="text-4xl mb-4">📅</div>
-                <p className="text-lg mb-2">No schedule generated yet</p>
-                <p className="text-sm">Add subjects in the left panel and click "Generate Schedule"</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {weeklyTimetable[selectedDay].map((slot, idx) => (
-                  <DraggableSlot
-                    key={slot.hour}
-                    slot={slot}
-                    index={idx}
-                    subjects={subjects}
-                    COMMON_SUBJECTS={COMMON_SUBJECTS}
-                    toggleCompletion={toggleCompletion}
-                    updateSlotSubject={updateSlotSubject}
-                    formatHour={formatHour}
-                    getColor={getColor}
-                    darkenColor={darkenColor}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
+      {templateModalOpen && (
+        <TemplateModal
+          templates={templates}
+          darkMode={darkMode}
+          onApply={applyTemplate}
+          onDelete={(id) => setTemplates(templates.filter(t => t.id !== id))}
+          onClose={() => setTemplateModalOpen(false)}
+        />
+      )}
 
-      <footer className="mt-8 text-center text-white/60 text-sm">
-        Made with ❤️ • StudyFlow
-      </footer>
+      {pomodoroOpen && (
+        <PomodoroTimer
+          darkMode={darkMode}
+          onClose={() => setPomodoroOpen(false)}
+        />
+      )}
     </div>
   );
+}
+
+function getTodayDate(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getStartOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day;
+  return new Date(d.setDate(diff));
 }
