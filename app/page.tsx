@@ -14,6 +14,8 @@ import SignInModal from "@/components/SignInModal";
 import ProfilePage from "@/components/ProfilePage";
 import SettingsPage from "@/components/SettingsPage";
 import SoundSettings from "@/components/SoundSettings";
+import AgeVerificationModal from "@/components/AgeVerificationModal";
+import ParentalDashboard from "@/components/ParentalDashboard";
 
 export type Subject = {
   id: string;
@@ -74,6 +76,8 @@ export default function HomePage() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
+  const [ageVerificationOpen, setAgeVerificationOpen] = useState(false);
+  const [parentalDashboardOpen, setParentalDashboardOpen] = useState(false);
   
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
