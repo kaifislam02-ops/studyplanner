@@ -17,6 +17,8 @@ type Props = {
   onTogglePrayer: () => void;
   onSignIn?: () => void;
   onSignOut?: () => void;
+  onOpenProfile?: () => void;
+  onOpenSettings?: () => void;
 };
 
 export default function Header({ 
@@ -38,6 +40,8 @@ export default function Header({
   onTogglePrayer,
   onSignIn,
   onSignOut,
+  onOpenProfile,
+  onOpenSettings,
 }: Props) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -174,11 +178,13 @@ export default function Header({
                   <div className={`text-xs ${textMuted}`}>{userEmail}</div>
                 </div>
                 <button
+                  onClick={onOpenSettings}
                   className={`w-full text-left px-4 py-2 text-sm hover:${darkMode ? 'bg-white/5' : 'bg-gray-100'} flex items-center gap-2`}
                 >
                   ⚙️ Settings
                 </button>
                 <button
+                  onClick={onOpenProfile}
                   className={`w-full text-left px-4 py-2 text-sm hover:${darkMode ? 'bg-white/5' : 'bg-gray-100'} flex items-center gap-2`}
                 >
                   👤 Profile

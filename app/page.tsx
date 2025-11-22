@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import Timeline from "@/components/Timeline";
@@ -9,6 +10,9 @@ import Analytics from "@/components/Analytics";
 import TaskModal from "@/components/TaskModal";
 import PomodoroTimer from "@/components/PomodoroTimer";
 import TemplateModal from "@/components/TemplateModal";
+import SignInModal from "@/components/SignInModal";
+import ProfilePage from "@/components/ProfilePage";
+import SettingsPage from "@/components/SettingsPage";
 
 export type Subject = {
   id: string;
@@ -46,15 +50,28 @@ const PRAYER_TIMES = [
 ];
 
 export default function HomePage() {
+  // Auth hook
+  const {
+    user,
+    loading: authLoading,
+    signInWithGoogle,
+    signInWithGithub,
+    signInWithEmail,
+    signUpWithEmail,
+    signOut,
+    updateUserProfile,
+    updateUserPreferences,
+  } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [view, setView] = useState<"day" | "week" | "analytics">("day");
   const [prayerEnabled, setPrayerEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   
-  // User authentication state
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+  // Modal states
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
@@ -79,13 +96,14 @@ export default function HomePage() {
       if (data.tasks) setTasks(data.tasks);
       if (data.templates) setTemplates(data.templates);
       if (data.prayerEnabled !== undefined) setPrayerEnabled(data.prayerEnabled);
-      if (data.userName) {
-        setIsSignedIn(true);
-        setUserName(data.userName);
-        setUserEmail(data.userEmail || "");
-      }
     }
-  }, []);
+
+    // Load user preferences
+    if (user?.preferences) {
+      setDarkMode(user.preferences.darkMode);
+      setPrayerEnabled(user.preferences.prayerEnabled);
+    }
+  }, [user]);
 
   // Save to localStorage
   useEffect(() => {
@@ -94,10 +112,8 @@ export default function HomePage() {
       tasks,
       templates,
       prayerEnabled,
-      userName: isSignedIn ? userName : "",
-      userEmail: isSignedIn ? userEmail : "",
     }));
-  }, [subjects, tasks, templates, prayerEnabled, isSignedIn, userName, userEmail]);
+  }, [subjects, tasks, templates, prayerEnabled]);
 
   // Get tasks for selected date (including recurring)
   const todaysTasks = useMemo(() => {
@@ -298,28 +314,17 @@ export default function HomePage() {
     }
   };
 
-  // Authentication handlers
-  const handleSignIn = () => {
-    const name = prompt("Enter your name:");
-    if (name && name.trim()) {
-      const email = prompt("Enter your email:");
-      if (email && email.trim()) {
-        setUserName(name.trim());
-        setUserEmail(email.trim());
-        setIsSignedIn(true);
-        alert(`Welcome, ${name}! 🎉`);
-      }
-    }
-  };
-
-  const handleSignOut = () => {
-    if (confirm("Are you sure you want to sign out?")) {
-      setIsSignedIn(false);
-      setUserName("");
-      setUserEmail("");
-      alert("Signed out successfully!");
-    }
-  };
+  // Show loading screen while auth initializes
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0A0E1A] text-white">
+        <div className="text-center">
+          <div className="text-4xl mb-4">📚</div>
+          <div className="text-xl font-bold">Loading StudyFlow...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'} ${darkMode ? 'text-white' : 'text-gray-900'} overflow-hidden`}>
@@ -346,8 +351,8 @@ export default function HomePage() {
           totalHours={todaysTasks.reduce((sum, t) => sum + (t.endTime - t.startTime), 0)}
           view={view}
           darkMode={darkMode}
-          userName={isSignedIn ? userName : undefined}
-          userEmail={isSignedIn ? userEmail : undefined}
+          userName={user?.displayName || undefined}
+          userEmail={user?.email || undefined}
           onAddTask={handleAddTask}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           onViewChange={setView}
@@ -357,8 +362,10 @@ export default function HomePage() {
           onExport={exportSchedule}
           onTogglePrayer={() => setPrayerEnabled(!prayerEnabled)}
           prayerEnabled={prayerEnabled}
-          onSignIn={handleSignIn}
-          onSignOut={handleSignOut}
+          onSignIn={() => setSignInModalOpen(true)}
+          onSignOut={signOut}
+          onOpenProfile={() => setProfileModalOpen(true)}
+          onOpenSettings={() => setSettingsModalOpen(true)}
         />
 
         <main className={`flex-1 overflow-y-auto p-6 ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'}`}>
@@ -398,6 +405,38 @@ export default function HomePage() {
       </div>
 
       {/* Modals */}
+      {signInModalOpen && (
+        <SignInModal
+          darkMode={darkMode}
+          onClose={() => setSignInModalOpen(false)}
+          onGoogleSignIn={signInWithGoogle}
+          onGithubSignIn={signInWithGithub}
+          onEmailSignIn={signInWithEmail}
+          onEmailSignUp={signUpWithEmail}
+        />
+      )}
+
+      {profileModalOpen && user && (
+        <ProfilePage
+          user={user}
+          darkMode={darkMode}
+          onClose={() => setProfileModalOpen(false)}
+          onUpdateProfile={updateUserProfile}
+        />
+      )}
+
+      {settingsModalOpen && user && (
+        <SettingsPage
+          user={user}
+          darkMode={darkMode}
+          prayerEnabled={prayerEnabled}
+          onClose={() => setSettingsModalOpen(false)}
+          onToggleDarkMode={() => setDarkMode(!darkMode)}
+          onTogglePrayer={() => setPrayerEnabled(!prayerEnabled)}
+          onUpdatePreferences={updateUserPreferences}
+        />
+      )}
+
       {modalOpen && (
         <TaskModal
           task={editingTask}
