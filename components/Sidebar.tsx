@@ -57,7 +57,7 @@ export default function Sidebar({
   const textMuted = darkMode ? 'text-white/60' : 'text-gray-600';
 
   return (
-    <aside className={`w-[280px] ${bgClass} border-r ${borderClass} flex flex-col overflow-hidden`}>
+    <aside className={`w-[320px] ${bgClass} border-r ${borderClass} flex flex-col overflow-hidden`}>
       {/* Logo */}
       <div className={`p-6 border-b ${borderClass}`}>
         <h1 className="text-xl font-bold">📚 StudyFlow</h1>

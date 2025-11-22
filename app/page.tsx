@@ -51,6 +51,11 @@ export default function HomePage() {
   const [prayerEnabled, setPrayerEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   
+  // User authentication state
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
     { id: "2", name: "Physics", color: "#8B5CF6", weeklyHours: 8, priority: 3 },
@@ -74,6 +79,11 @@ export default function HomePage() {
       if (data.tasks) setTasks(data.tasks);
       if (data.templates) setTemplates(data.templates);
       if (data.prayerEnabled !== undefined) setPrayerEnabled(data.prayerEnabled);
+      if (data.userName) {
+        setIsSignedIn(true);
+        setUserName(data.userName);
+        setUserEmail(data.userEmail || "");
+      }
     }
   }, []);
 
@@ -84,8 +94,10 @@ export default function HomePage() {
       tasks,
       templates,
       prayerEnabled,
+      userName: isSignedIn ? userName : "",
+      userEmail: isSignedIn ? userEmail : "",
     }));
-  }, [subjects, tasks, templates, prayerEnabled]);
+  }, [subjects, tasks, templates, prayerEnabled, isSignedIn, userName, userEmail]);
 
   // Get tasks for selected date (including recurring)
   const todaysTasks = useMemo(() => {
@@ -286,6 +298,29 @@ export default function HomePage() {
     }
   };
 
+  // Authentication handlers
+  const handleSignIn = () => {
+    const name = prompt("Enter your name:");
+    if (name && name.trim()) {
+      const email = prompt("Enter your email:");
+      if (email && email.trim()) {
+        setUserName(name.trim());
+        setUserEmail(email.trim());
+        setIsSignedIn(true);
+        alert(`Welcome, ${name}! 🎉`);
+      }
+    }
+  };
+
+  const handleSignOut = () => {
+    if (confirm("Are you sure you want to sign out?")) {
+      setIsSignedIn(false);
+      setUserName("");
+      setUserEmail("");
+      alert("Signed out successfully!");
+    }
+  };
+
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'} ${darkMode ? 'text-white' : 'text-gray-900'} overflow-hidden`}>
       {/* Sidebar */}
@@ -311,6 +346,8 @@ export default function HomePage() {
           totalHours={todaysTasks.reduce((sum, t) => sum + (t.endTime - t.startTime), 0)}
           view={view}
           darkMode={darkMode}
+          userName={isSignedIn ? userName : undefined}
+          userEmail={isSignedIn ? userEmail : undefined}
           onAddTask={handleAddTask}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           onViewChange={setView}
@@ -320,6 +357,8 @@ export default function HomePage() {
           onExport={exportSchedule}
           onTogglePrayer={() => setPrayerEnabled(!prayerEnabled)}
           prayerEnabled={prayerEnabled}
+          onSignIn={handleSignIn}
+          onSignOut={handleSignOut}
         />
 
         <main className={`flex-1 overflow-y-auto p-6 ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'}`}>
