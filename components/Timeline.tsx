@@ -4,6 +4,7 @@ type Props = {
   tasks: Task[];
   subjects: Subject[];
   prayerTimes: { name: string; time: number }[];
+  darkMode: boolean;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onToggleComplete: (taskId: string) => void;
@@ -12,12 +13,17 @@ type Props = {
 export default function Timeline({ 
   tasks, 
   subjects, 
-  prayerTimes, 
+  prayerTimes,
+  darkMode,
   onEditTask, 
   onDeleteTask, 
   onToggleComplete 
 }: Props) {
   const hours = Array.from({ length: 19 }, (_, i) => i + 5); // 5 AM to 11 PM
+
+  const cardBg = darkMode ? 'bg-white/5' : 'bg-white';
+  const borderClass = darkMode ? 'border-white/10' : 'border-gray-200';
+  const textMuted = darkMode ? 'text-white/60' : 'text-gray-600';
 
   const getSubject = (subjectId: string) => {
     return subjects.find(s => s.id === subjectId);
@@ -46,7 +52,7 @@ export default function Timeline({
         return (
           <div key={hour} className="flex gap-4">
             {/* Time Label */}
-            <div className="w-20 pt-1 text-sm font-semibold text-white/60 flex-shrink-0">
+            <div className={`w-20 pt-1 text-sm font-semibold ${textMuted} flex-shrink-0`}>
               {formatTime(hour)}
             </div>
 
@@ -54,7 +60,7 @@ export default function Timeline({
             <div className="flex-1">
               {prayer ? (
                 // Prayer Time Card
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                <div className={`${cardBg} border border-cyan-500/30 rounded-lg p-4`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
                       🕌
@@ -75,12 +81,12 @@ export default function Timeline({
                     return (
                       <div
                         key={task.id}
-                        className={`border rounded-lg p-4 hover:border-white/20 transition-all group ${
+                        className={`${cardBg} border ${borderClass} rounded-lg p-4 hover:border-blue-500/50 transition-all group ${
                           task.completed ? 'opacity-60' : ''
                         }`}
                         style={{
-                          backgroundColor: subject ? `${subject.color}15` : '#ffffff08',
-                          borderColor: subject ? `${subject.color}40` : '#ffffff10',
+                          borderLeftWidth: '4px',
+                          borderLeftColor: subject?.color || '#666',
                         }}
                       >
                         <div className="flex items-start gap-3">
@@ -90,7 +96,7 @@ export default function Timeline({
                             className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
                               task.completed
                                 ? 'bg-green-500 text-white'
-                                : 'bg-white/10 hover:bg-white/20'
+                                : darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'
                             }`}
                           >
                             {task.completed && (
@@ -113,7 +119,7 @@ export default function Timeline({
                                 {task.title}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-white/60">
+                            <div className={`flex items-center gap-3 text-xs ${textMuted}`}>
                               <span>{subject?.name}</span>
                               <span>•</span>
                               <span>{formatTime(task.startTime)} - {formatTime(task.endTime)}</span>
@@ -121,7 +127,7 @@ export default function Timeline({
                               <span>{duration}h</span>
                             </div>
                             {task.notes && (
-                              <div className="mt-2 text-sm text-white/70">{task.notes}</div>
+                              <div className={`mt-2 text-sm ${darkMode ? 'text-white/70' : 'text-gray-600'}`}>{task.notes}</div>
                             )}
                           </div>
 
@@ -129,7 +135,7 @@ export default function Timeline({
                           <div className="opacity-0 group-hover:opacity-100 flex gap-1 flex-shrink-0">
                             <button
                               onClick={() => onEditTask(task)}
-                              className="p-1.5 hover:bg-white/10 rounded text-blue-400"
+                              className={`p-1.5 hover:${darkMode ? 'bg-white/10' : 'bg-gray-200'} rounded text-blue-400`}
                               title="Edit"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,7 +144,7 @@ export default function Timeline({
                             </button>
                             <button
                               onClick={() => onDeleteTask(task.id)}
-                              className="p-1.5 hover:bg-white/10 rounded text-red-400"
+                              className={`p-1.5 hover:${darkMode ? 'bg-white/10' : 'bg-gray-200'} rounded text-red-400`}
                               title="Delete"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +159,7 @@ export default function Timeline({
                 </div>
               ) : (
                 // Empty Slot
-                <div className="bg-white/[0.02] border border-white/5 rounded-lg p-4 text-center text-white/40 text-sm">
+                <div className={`${cardBg} border ${borderClass} rounded-lg p-4 text-center ${textMuted} text-sm`}>
                   Free
                 </div>
               )}
