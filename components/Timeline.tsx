@@ -1,4 +1,5 @@
 import type { Task, Subject } from "@/app/page";
+import { soundManager } from "@/lib/sounds";
 
 type Props = {
   tasks: Task[];
@@ -92,7 +93,12 @@ export default function Timeline({
                         <div className="flex items-start gap-3">
                           {/* Checkbox */}
                           <button
-                            onClick={() => onToggleComplete(task.id)}
+                            onClick={() => {
+                              onToggleComplete(task.id);
+                              if (!task.completed) {
+                                soundManager.play('task-complete');
+                              }
+                            }}
                             className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
                               task.completed
                                 ? 'bg-green-500 text-white'

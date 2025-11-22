@@ -19,6 +19,7 @@ type Props = {
   onSignOut?: () => void;
   onOpenProfile?: () => void;
   onOpenSettings?: () => void;
+  onOpenSoundSettings?: () => void;
 };
 
 export default function Header({ 
@@ -42,6 +43,7 @@ export default function Header({
   onSignOut,
   onOpenProfile,
   onOpenSettings,
+  onOpenSoundSettings,
 }: Props) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -151,6 +153,12 @@ export default function Header({
                 className={`w-full text-left px-4 py-2 text-sm hover:${darkMode ? 'bg-white/5' : 'bg-gray-100'} flex items-center gap-2`}
               >
                 {darkMode ? '☀️' : '🌙'} {darkMode ? 'Light' : 'Dark'} Mode
+              </button>
+              <button
+                onClick={onOpenSoundSettings}
+                className={`w-full text-left px-4 py-2 text-sm hover:${darkMode ? 'bg-white/5' : 'bg-gray-100'} flex items-center gap-2`}
+              >
+                🔊 Sound Settings
               </button>
             </div>
           </div>

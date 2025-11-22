@@ -13,6 +13,7 @@ import TemplateModal from "@/components/TemplateModal";
 import SignInModal from "@/components/SignInModal";
 import ProfilePage from "@/components/ProfilePage";
 import SettingsPage from "@/components/SettingsPage";
+import SoundSettings from "@/components/SoundSettings";
 
 export type Subject = {
   id: string;
@@ -72,6 +73,7 @@ export default function HomePage() {
   const [signInModalOpen, setSignInModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
   
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
@@ -354,6 +356,7 @@ export default function HomePage() {
           onSignOut={signOut}
           onOpenProfile={() => setProfileModalOpen(true)}
           onOpenSettings={() => setSettingsModalOpen(true)}
+          onOpenSoundSettings={() => setSoundSettingsOpen(true)}
         />
 
         <main className={`flex-1 overflow-y-auto p-6 ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'}`}>
@@ -422,6 +425,13 @@ export default function HomePage() {
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           onTogglePrayer={() => setPrayerEnabled(!prayerEnabled)}
           onUpdatePreferences={updateUserPreferences}
+        />
+      )}
+
+      {soundSettingsOpen && (
+        <SoundSettings
+          darkMode={darkMode}
+          onClose={() => setSoundSettingsOpen(false)}
         />
       )}
 
