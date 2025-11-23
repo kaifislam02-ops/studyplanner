@@ -17,6 +17,7 @@ export type ParentalControls = {
   parentId: string;
   maxDailyHours: number;
   mandatoryBreakMinutes: number;
+  blockedHours?: number[]; // Array of hours (0-23) when study is blocked
   enforcePomodoroTimer: boolean;
   requireApprovalForDelete: boolean;
   lockSettings: boolean;
