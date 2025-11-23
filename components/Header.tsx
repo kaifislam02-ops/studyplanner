@@ -80,9 +80,9 @@ export default function Header({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className={`flex ${darkMode ? 'bg-white/5' : 'bg-gray-100'} rounded-lg p-1`}>
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* View Toggle - Hidden on mobile */}
+          <div className={`hidden md:flex ${darkMode ? 'bg-white/5' : 'bg-gray-100'} rounded-lg p-1`}>
             <button
               onClick={() => onViewChange("day")}
               className={`px-3 py-1.5 rounded text-sm font-medium transition ${
@@ -163,18 +163,18 @@ export default function Header({
             </div>
           </div>
 
-          {/* User Menu */}
+          {/* User Menu or Sign In - Always visible */}
           {userName ? (
             <div className="relative group">
-              <button className={`flex items-center gap-2 px-3 py-2 ${darkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'} rounded-lg transition-colors`}>
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              <button className={`flex items-center gap-2 px-2 sm:px-3 py-2 ${darkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'} rounded-lg transition-colors`}>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0">
                   {userName.charAt(0).toUpperCase()}
                 </div>
-                <div className="text-left hidden lg:block">
+                <div className="text-left hidden sm:block">
                   <div className="text-sm font-medium">{userName}</div>
-                  <div className={`text-xs ${textMuted}`}>{userEmail}</div>
+                  <div className={`text-xs ${textMuted} truncate max-w-[100px]`}>{userEmail}</div>
                 </div>
-                <svg className="w-4 h-4 hidden lg:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -209,24 +209,24 @@ export default function Header({
           ) : (
             <button
               onClick={onSignIn}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors text-white"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors text-white text-sm whitespace-nowrap flex-shrink-0"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
-              Sign In
+              <span className="hidden xs:inline">Sign In</span>
             </button>
           )}
 
-          {/* Add Task Button */}
+          {/* Add Task Button - Always visible */}
           <button
             onClick={onAddTask}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-4 py-2 rounded-lg font-medium transition-colors text-white shadow-lg"
+            className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-white shadow-lg text-sm whitespace-nowrap flex-shrink-0"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span className="hidden sm:inline">Add Task</span>
+            <span className="hidden xs:inline">Add</span>
           </button>
         </div>
       </div>
