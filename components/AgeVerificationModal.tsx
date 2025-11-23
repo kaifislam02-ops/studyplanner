@@ -2,11 +2,12 @@ import { useState } from "react";
 
 type Props = {
   darkMode: boolean;
+  userId: string; // Add userId to save verification
   onComplete: (data: { birthDate: string; parentEmail?: string; parentName?: string }) => void;
   onSkip?: () => void;
 };
 
-export default function AgeVerificationModal({ darkMode, onComplete, onSkip }: Props) {
+export default function AgeVerificationModal({ darkMode, userId, onComplete, onSkip }: Props) {
   const [step, setStep] = useState<'age' | 'parent'>('age');
   const [birthDate, setBirthDate] = useState('');
   const [parentEmail, setParentEmail] = useState('');
@@ -38,6 +39,10 @@ export default function AgeVerificationModal({ darkMode, onComplete, onSkip }: P
       return;
     }
     
+    // Save to localStorage immediately
+    localStorage.setItem(`age-verified-${userId}`, age.toString());
+    localStorage.setItem(`birth-date-${userId}`, birthDate);
+    
     if (age < 18) {
       setIsMinor(true);
       setStep('parent');
@@ -48,6 +53,14 @@ export default function AgeVerificationModal({ darkMode, onComplete, onSkip }: P
 
   const handleParentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Save parent info to localStorage
+    localStorage.setItem(`parent-info-${userId}`, JSON.stringify({
+      email: parentEmail,
+      name: parentName,
+      verifiedAt: new Date().toISOString(),
+    }));
+    
     onComplete({ birthDate, parentEmail, parentName });
   };
 
@@ -63,7 +76,7 @@ export default function AgeVerificationModal({ darkMode, onComplete, onSkip }: P
             </h3>
             <p className={`text-sm ${textMuted} mt-2`}>
               {step === 'age' 
-                ? 'We need to verify your age to provide appropriate features'
+                ? 'This is a one-time verification. We need to verify your age to provide appropriate features'
                 : 'Since you\'re under 18, we need a parent or guardian\'s permission'
               }
             </p>
@@ -87,7 +100,7 @@ export default function AgeVerificationModal({ darkMode, onComplete, onSkip }: P
                   required
                 />
                 <p className={`text-xs ${textMuted} mt-2`}>
-                  We use this to ensure age-appropriate features and parental controls
+                  ✅ This will be saved and you won't be asked again
                 </p>
               </div>
 

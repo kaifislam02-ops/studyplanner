@@ -118,9 +118,10 @@ export default function HomePage() {
   useEffect(() => {
     if (user) {
       const savedAge = localStorage.getItem(`age-verified-${user.uid}`);
-      if (!savedAge) {
-        setAgeVerificationOpen(true);
-      } else {
+      const savedBirthDate = localStorage.getItem(`birth-date-${user.uid}`);
+      
+      if (savedAge && savedBirthDate) {
+        // Already verified, don't show modal
         const age = parseInt(savedAge);
         setUserAge(age);
         setIsMinor(age < 18);
@@ -139,6 +140,9 @@ export default function HomePage() {
             }));
           }
         }
+      } else {
+        // Not verified yet, show modal
+        setAgeVerificationOpen(true);
       }
     }
   }, [user]);
@@ -561,9 +565,10 @@ export default function HomePage() {
       </div>
 
       {/* Modals */}
-      {ageVerificationOpen && (
+      {ageVerificationOpen && user && (
         <AgeVerificationModal
           darkMode={darkMode}
+          userId={user.uid}
           onComplete={handleAgeVerification}
           onSkip={() => setAgeVerificationOpen(false)}
         />
