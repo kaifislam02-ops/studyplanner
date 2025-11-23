@@ -77,34 +77,64 @@ export default function AIDoubtSolver({ darkMode, onClose }: Props) {
     setLoading(true);
 
     try {
-      // Call Claude API
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // Check if API key exists
+      const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+      
+      if (!apiKey || apiKey === 'your_api_key_here') {
+        throw new Error('API key not configured. Please add NEXT_PUBLIC_ANTHROPIC_API_KEY to your .env.local file.');
+      }
+
+      // Call Claude API via API route (recommended) or direct
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1024,
-          system: getSystemPrompt(subject),
           messages: messages
-            .filter(m => m.role !== 'assistant' || m.content) // Filter out empty assistant messages
+            .filter(m => m.role !== 'assistant' || m.content)
             .map(m => ({
               role: m.role,
               content: m.content,
             }))
             .concat([{ role: 'user', content: input }]),
+          system: getSystemPrompt(subject),
         }),
+      }).catch(async () => {
+        // Fallback to direct API call if API route doesn't exist
+        return await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1024,
+            system: getSystemPrompt(subject),
+            messages: messages
+              .filter(m => m.role !== 'assistant' || m.content)
+              .map(m => ({
+                role: m.role,
+                content: m.content,
+              }))
+              .concat([{ role: 'user', content: input }]),
+          }),
+        });
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+      }
 
       const data = await response.json();
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.content[0]?.text || 'Sorry, I encountered an error. Please try again.',
+        content: data.content?.[0]?.text || data.response || 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date(),
       };
 
@@ -112,12 +142,27 @@ export default function AIDoubtSolver({ darkMode, onClose }: Props) {
       
       // Save to history
       saveToHistory([...messages, userMessage, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling Claude API:', error);
+      
+      let errorText = '❌ Sorry, I encountered an error. ';
+      
+      if (error.message.includes('API key')) {
+        errorText += '\n\n**Setup Required:**\n1. Get an API key from https://console.anthropic.com/\n2. Create a `.env.local` file in your project root\n3. Add: `NEXT_PUBLIC_ANTHROPIC_API_KEY=your_key_here`\n4. Restart your dev server';
+      } else if (error.message.includes('401') || error.message.includes('403')) {
+        errorText += '\n\nYour API key is invalid or expired. Please check your key at https://console.anthropic.com/';
+      } else if (error.message.includes('429')) {
+        errorText += '\n\nRate limit exceeded. Please wait a moment and try again.';
+      } else if (error.message.includes('500') || error.message.includes('502')) {
+        errorText += '\n\nThe AI service is temporarily unavailable. Please try again in a moment.';
+      } else {
+        errorText += '\n\nPlease check your internet connection and try again.';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '❌ Sorry, I encountered an error. Please check your API key and try again.',
+        content: errorText,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
