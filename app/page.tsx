@@ -86,6 +86,8 @@ export default function HomePage() {
   const [userAge, setUserAge] = useState<number | null>(null);
   const [isMinor, setIsMinor] = useState(false);
   const [parentalControls, setParentalControls] = useState<ParentalControls>({
+    studentId: '',
+    parentId: '',
     maxDailyHours: 8,
     mandatoryBreakMinutes: 30,
     enforcePomodoroTimer: false,
@@ -127,6 +129,13 @@ export default function HomePage() {
           const savedControls = localStorage.getItem(`parental-controls-${user.uid}`);
           if (savedControls) {
             setParentalControls(JSON.parse(savedControls));
+          } else {
+            // Initialize with user IDs
+            setParentalControls(prev => ({
+              ...prev,
+              studentId: user.uid,
+              parentId: '', // Will be set when parent verifies
+            }));
           }
         }
       }
@@ -183,8 +192,6 @@ export default function HomePage() {
           duration: totalDuration,
           tasksCompleted: completedToday.length,
           subjects: subjectsStudied,
-          studentId: "",
-          breaksTaken: 0
         };
 
         const updatedSessions = [...studySessions, newSession];

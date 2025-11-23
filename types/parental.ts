@@ -12,6 +12,9 @@ export type ParentalAccount = {
 };
 
 export type ParentalControls = {
+  id?: string;
+  studentId: string;
+  parentId: string;
   maxDailyHours: number;
   mandatoryBreakMinutes: number;
   enforcePomodoroTimer: boolean;
@@ -20,6 +23,8 @@ export type ParentalControls = {
   notifyOnLogin: boolean;
   weeklyReportEnabled: boolean;
   notifyOnLongSession: boolean;
+  createdAt?: string; // ISO string
+  updatedAt?: string; // ISO string
 };
 
 export type StudySession = {
