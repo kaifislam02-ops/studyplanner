@@ -53,9 +53,9 @@ export default function SettingsPage({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className={`${bgClass} border ${borderClass} rounded-xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${borderClass} sticky top-0 ${bgClass} z-10`}>
+      <div className={`${bgClass} border ${borderClass} rounded-xl max-w-2xl w-full shadow-2xl max-h-[90vh] flex flex-col`}>
+        {/* Header - Fixed */}
+        <div className={`flex items-center justify-between p-6 border-b ${borderClass} flex-shrink-0`}>
           <div>
             <h3 className="text-xl font-bold">Settings</h3>
             <p className={`text-sm ${textMuted} mt-1`}>Customize your StudyFlow experience</p>
@@ -70,8 +70,8 @@ export default function SettingsPage({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {message && (
             <div className={`${message.includes('success') ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-red-500/10 border-red-500/50 text-red-400'} border rounded-lg p-3 text-sm`}>
               {message}
@@ -203,23 +203,23 @@ export default function SettingsPage({
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Save Button */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={onClose}
-              className={`flex-1 px-4 py-2.5 ${darkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-200 hover:bg-gray-300'} rounded-lg font-medium transition-colors`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Settings"}
-            </button>
-          </div>
+        {/* Footer - Fixed (Save buttons) */}
+        <div className={`flex gap-3 p-6 border-t ${borderClass} flex-shrink-0`}>
+          <button
+            onClick={onClose}
+            className={`flex-1 px-4 py-2.5 ${darkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-200 hover:bg-gray-300'} rounded-lg font-medium transition-colors`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Settings"}
+          </button>
         </div>
       </div>
     </div>

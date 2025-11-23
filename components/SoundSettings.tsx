@@ -55,9 +55,9 @@ export default function SoundSettings({ darkMode, onClose, onOpenAlarms }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className={`${bgClass} border ${borderClass} rounded-xl max-w-lg w-full shadow-2xl`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${borderClass}`}>
+      <div className={`${bgClass} border ${borderClass} rounded-xl max-w-lg w-full shadow-2xl max-h-[90vh] flex flex-col`}>
+        {/* Header - Fixed */}
+        <div className={`flex items-center justify-between p-6 border-b ${borderClass} flex-shrink-0`}>
           <div>
             <h3 className="text-xl font-bold">🔊 Sound & Notifications</h3>
             <p className={`text-sm ${textMuted} mt-1`}>Customize your audio experience</p>
@@ -72,8 +72,8 @@ export default function SoundSettings({ darkMode, onClose, onOpenAlarms }: Props
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Master Toggle */}
           <div className={`${cardBg} rounded-lg p-4`}>
             <div className="flex items-center justify-between">
@@ -191,8 +191,8 @@ export default function SoundSettings({ darkMode, onClose, onOpenAlarms }: Props
           </div>
         </div>
 
-        {/* Footer */}
-        <div className={`p-4 border-t ${borderClass}`}>
+        {/* Footer - Fixed */}
+        <div className={`p-4 border-t ${borderClass} flex-shrink-0`}>
           <button
             onClick={onClose}
             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
