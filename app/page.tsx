@@ -17,6 +17,7 @@ import SoundSettings from "@/components/SoundSettings";
 import AlarmSettings from "@/components/AlarmSettings";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ParentalDashboard from "@/components/ParentalDashboard";
+import type { ParentalControls, StudySession } from "@/types/parental";
 
 export type Subject = {
   id: string;
@@ -81,6 +82,21 @@ export default function HomePage() {
   const [ageVerificationOpen, setAgeVerificationOpen] = useState(false);
   const [parentalDashboardOpen, setParentalDashboardOpen] = useState(false);
   
+  // Age verification and parental controls state
+  const [userAge, setUserAge] = useState<number | null>(null);
+  const [isMinor, setIsMinor] = useState(false);
+  const [parentalControls, setParentalControls] = useState<ParentalControls>({
+    maxDailyHours: 8,
+    mandatoryBreakMinutes: 30,
+    enforcePomodoroTimer: false,
+    requireApprovalForDelete: true,
+    lockSettings: false,
+    notifyOnLogin: true,
+    weeklyReportEnabled: true,
+    notifyOnLongSession: true,
+  });
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: "1", name: "Mathematics", color: "#3B82F6", weeklyHours: 10, priority: 3 },
     { id: "2", name: "Physics", color: "#8B5CF6", weeklyHours: 8, priority: 3 },
@@ -94,6 +110,28 @@ export default function HomePage() {
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
+
+  // Check if age verification is needed
+  useEffect(() => {
+    if (user) {
+      const savedAge = localStorage.getItem(`age-verified-${user.uid}`);
+      if (!savedAge) {
+        setAgeVerificationOpen(true);
+      } else {
+        const age = parseInt(savedAge);
+        setUserAge(age);
+        setIsMinor(age < 18);
+        
+        // Load parental controls if minor
+        if (age < 18) {
+          const savedControls = localStorage.getItem(`parental-controls-${user.uid}`);
+          if (savedControls) {
+            setParentalControls(JSON.parse(savedControls));
+          }
+        }
+      }
+    }
+  }, [user]);
 
   // Load from localStorage
   useEffect(() => {
@@ -111,6 +149,14 @@ export default function HomePage() {
       setDarkMode(user.preferences.darkMode);
       setPrayerEnabled(user.preferences.prayerEnabled);
     }
+
+    // Load study sessions
+    if (user) {
+      const savedSessions = localStorage.getItem(`study-sessions-${user.uid}`);
+      if (savedSessions) {
+        setStudySessions(JSON.parse(savedSessions));
+      }
+    }
   }, [user]);
 
   // Save to localStorage
@@ -122,6 +168,31 @@ export default function HomePage() {
       prayerEnabled,
     }));
   }, [subjects, tasks, templates, prayerEnabled]);
+
+  // Track study sessions
+  useEffect(() => {
+    if (user && tasks.length > 0) {
+      const completedToday = todaysTasks.filter(t => t.completed);
+      if (completedToday.length > 0) {
+        const totalDuration = completedToday.reduce((sum, t) => sum + (t.endTime - t.startTime) * 60, 0);
+        const subjectsStudied = [...new Set(completedToday.map(t => subjects.find(s => s.id === t.subjectId)?.name || 'Unknown'))];
+        
+        const newSession: StudySession = {
+          id: Date.now().toString(),
+          startTime: new Date().toISOString(),
+          duration: totalDuration,
+          tasksCompleted: completedToday.length,
+          subjects: subjectsStudied,
+          studentId: "",
+          breaksTaken: 0
+        };
+
+        const updatedSessions = [...studySessions, newSession];
+        setStudySessions(updatedSessions);
+        localStorage.setItem(`study-sessions-${user.uid}`, JSON.stringify(updatedSessions));
+      }
+    }
+  }, [tasks.filter(t => t.completed).length]); // Only trigger when completion changes
 
   // Get tasks for selected date (including recurring)
   const todaysTasks = useMemo(() => {
@@ -184,6 +255,67 @@ export default function HomePage() {
       subjectHours,
     };
   }, [todaysTasks, tasks]);
+
+  // Calculate weekly stats for parental dashboard
+  const weeklyStats = useMemo(() => {
+    const weekSessions = studySessions.filter(s => {
+      const sessionDate = new Date(s.startTime);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return sessionDate >= weekAgo;
+    });
+
+    const totalHours = Math.round(weekSessions.reduce((sum, s) => sum + s.duration, 0) / 60);
+    const tasksCompleted = weekSessions.reduce((sum, s) => sum + s.tasksCompleted, 0);
+    const averageDaily = weekSessions.length > 0 ? Math.round(totalHours / 7) : 0;
+    const longestSession = weekSessions.length > 0 
+      ? Math.round(Math.max(...weekSessions.map(s => s.duration)) / 60) 
+      : 0;
+
+    return {
+      totalHours,
+      tasksCompleted,
+      averageDaily,
+      longestSession,
+    };
+  }, [studySessions]);
+
+  // Handle age verification completion
+  const handleAgeVerification = (data: { birthDate: string; parentEmail?: string; parentName?: string }) => {
+    if (!user) return;
+
+    const birthDate = new Date(data.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    setUserAge(age);
+    setIsMinor(age < 18);
+    localStorage.setItem(`age-verified-${user.uid}`, age.toString());
+
+    if (age < 18 && data.parentEmail) {
+      // Store parent info (in real app, send verification email)
+      localStorage.setItem(`parent-info-${user.uid}`, JSON.stringify({
+        email: data.parentEmail,
+        name: data.parentName,
+      }));
+      alert(`Verification email sent to ${data.parentEmail}! Your parent will be able to access the parental dashboard.`);
+    }
+
+    setAgeVerificationOpen(false);
+  };
+
+  // Handle parental controls update
+  const handleUpdateParentalControls = (controls: Partial<ParentalControls>) => {
+    if (!user) return;
+    
+    const updatedControls = { ...parentalControls, ...controls };
+    setParentalControls(updatedControls);
+    localStorage.setItem(`parental-controls-${user.uid}`, JSON.stringify(updatedControls));
+  };
 
   // Auto-generate schedule
   const generateSchedule = () => {
@@ -405,9 +537,42 @@ export default function HomePage() {
             />
           )}
         </main>
+
+        {/* Parental Dashboard Access Button (for minors) */}
+        {isMinor && user && (
+          <div className="fixed bottom-6 right-6 z-40">
+            <button
+              onClick={() => setParentalDashboardOpen(true)}
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-3 rounded-full shadow-lg font-medium flex items-center gap-2"
+              title="Parental Controls"
+            >
+              👨‍👩‍👧 Parent Dashboard
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
+      {ageVerificationOpen && (
+        <AgeVerificationModal
+          darkMode={darkMode}
+          onComplete={handleAgeVerification}
+          onSkip={() => setAgeVerificationOpen(false)}
+        />
+      )}
+
+      {parentalDashboardOpen && user && (
+        <ParentalDashboard
+          darkMode={darkMode}
+          studentName={user.displayName || 'Student'}
+          controls={parentalControls}
+          recentSessions={studySessions}
+          weeklyStats={weeklyStats}
+          onUpdateControls={handleUpdateParentalControls}
+          onClose={() => setParentalDashboardOpen(false)}
+        />
+      )}
+
       {signInModalOpen && (
         <SignInModal
           darkMode={darkMode}
