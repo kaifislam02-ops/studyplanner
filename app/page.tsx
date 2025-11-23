@@ -17,6 +17,8 @@ import SoundSettings from "@/components/SoundSettings";
 import AlarmSettings from "@/components/AlarmSettings";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ParentalDashboard from "@/components/ParentalDashboard";
+import FocusMode from "@/components/FocusMode";
+import AIDoubtSolver from "@/components/AIDoubtSolver";
 import type { ParentalControls, StudySession } from "@/types/parental";
 
 export type Subject = {
@@ -81,6 +83,8 @@ export default function HomePage() {
   const [alarmSettingsOpen, setAlarmSettingsOpen] = useState(false);
   const [ageVerificationOpen, setAgeVerificationOpen] = useState(false);
   const [parentalDashboardOpen, setParentalDashboardOpen] = useState(false);
+  const [focusModeOpen, setFocusModeOpen] = useState(false);
+  const [aiDoubtSolverOpen, setAiDoubtSolverOpen] = useState(false);
   
   // Age verification and parental controls state
   const [userAge, setUserAge] = useState<number | null>(null);
@@ -552,7 +556,7 @@ export default function HomePage() {
 
         {/* Parental Dashboard Access Button (for minors) */}
         {isMinor && user && (
-          <div className="fixed bottom-6 right-6 z-40">
+          <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
             <button
               onClick={() => setParentalDashboardOpen(true)}
               className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-3 rounded-full shadow-lg font-medium flex items-center gap-2"
@@ -562,6 +566,24 @@ export default function HomePage() {
             </button>
           </div>
         )}
+
+        {/* Floating Action Buttons */}
+        <div className={`fixed ${isMinor ? 'bottom-24' : 'bottom-6'} right-6 z-40 flex flex-col gap-3`}>
+          <button
+            onClick={() => setFocusModeOpen(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 transition-all hover:scale-105"
+            title="Focus Mode"
+          >
+            🎯 Focus Mode
+          </button>
+          <button
+            onClick={() => setAiDoubtSolverOpen(true)}
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-3 rounded-full shadow-lg font-medium flex items-center gap-2 transition-all hover:scale-105"
+            title="AI Doubt Solver"
+          >
+            🤖 Ask AI
+          </button>
+        </div>
       </div>
 
       {/* Modals */}
@@ -658,6 +680,20 @@ export default function HomePage() {
         <PomodoroTimer
           darkMode={darkMode}
           onClose={() => setPomodoroOpen(false)}
+        />
+      )}
+
+      {focusModeOpen && (
+        <FocusMode
+          darkMode={darkMode}
+          onClose={() => setFocusModeOpen(false)}
+        />
+      )}
+
+      {aiDoubtSolverOpen && (
+        <AIDoubtSolver
+          darkMode={darkMode}
+          onClose={() => setAiDoubtSolverOpen(false)}
         />
       )}
     </div>
