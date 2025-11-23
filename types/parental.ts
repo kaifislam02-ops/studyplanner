@@ -1,5 +1,16 @@
 // src/types/parental.ts
 
+export type ParentalAccount = {
+  id: string;
+  parentEmail: string;
+  parentName: string;
+  studentId: string;
+  studentName: string;
+  verified: boolean;
+  createdAt: string; // ISO string
+  verificationToken?: string;
+};
+
 export type ParentalControls = {
   maxDailyHours: number;
   mandatoryBreakMinutes: number;
