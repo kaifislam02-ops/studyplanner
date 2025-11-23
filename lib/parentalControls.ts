@@ -323,7 +323,7 @@ export async function checkDailyStudyLimit(studentId: string): Promise<boolean> 
 
 export async function isWithinAllowedHours(studentId: string): Promise<boolean> {
   const controls = await getParentalControls(studentId);
-  if (!controls || controls.blockedHours.length === 0) return true;
+  if (!controls || !controls.blockedHours || controls.blockedHours.length === 0) return true;
   
   const currentHour = new Date().getHours();
   

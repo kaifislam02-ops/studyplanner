@@ -11,13 +11,18 @@ export type ParentalAccount = {
   verificationToken?: string;
 };
 
+export type BlockedHour = {
+  start: number; // Hour (0-23)
+  end: number; // Hour (0-23)
+};
+
 export type ParentalControls = {
   id?: string;
   studentId: string;
   parentId: string;
   maxDailyHours: number;
   mandatoryBreakMinutes: number;
-  blockedHours?: number[]; // Array of hours (0-23) when study is blocked
+  blockedHours?: BlockedHour[]; // Array of blocked time ranges
   enforcePomodoroTimer: boolean;
   requireApprovalForDelete: boolean;
   lockSettings: boolean;
