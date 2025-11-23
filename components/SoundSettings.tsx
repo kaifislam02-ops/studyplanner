@@ -4,9 +4,10 @@ import { soundManager, SoundType } from "@/lib/sounds";
 type Props = {
   darkMode: boolean;
   onClose: () => void;
+  onOpenAlarms: () => void;
 };
 
-export default function SoundSettings({ darkMode, onClose }: Props) {
+export default function SoundSettings({ darkMode, onClose, onOpenAlarms }: Props) {
   const [enabled, setEnabled] = useState(soundManager.isEnabled());
   const [volume, setVolume] = useState(soundManager.getVolume());
   const [notificationPermission, setNotificationPermission] = useState(
@@ -172,6 +173,22 @@ export default function SoundSettings({ darkMode, onClose }: Props) {
               </div>
             </div>
           )}
+
+          {/* Alarm Settings Button */}
+          <div className={`${cardBg} rounded-lg p-4`}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="font-semibold">Study Alarms</div>
+                <div className={`text-sm ${textMuted}`}>Set reminders for study sessions</div>
+              </div>
+            </div>
+            <button
+              onClick={onOpenAlarms}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              ⏰ Manage Alarms
+            </button>
+          </div>
         </div>
 
         {/* Footer */}

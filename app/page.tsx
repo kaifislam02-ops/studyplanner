@@ -435,8 +435,9 @@ export default function HomePage() {
       {soundSettingsOpen && (
         <SoundSettings
           darkMode={darkMode}
-          onClose={() => setSoundSettingsOpen(false)}
-        />
+          onClose={() => setSoundSettingsOpen(false)} onOpenAlarms={function (): void {
+            throw new Error("Function not implemented.");
+          } }        />
       )}
 
       {modalOpen && (
