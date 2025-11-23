@@ -14,6 +14,7 @@ import SignInModal from "@/components/SignInModal";
 import ProfilePage from "@/components/ProfilePage";
 import SettingsPage from "@/components/SettingsPage";
 import SoundSettings from "@/components/SoundSettings";
+import AlarmSettings from "@/components/AlarmSettings";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ParentalDashboard from "@/components/ParentalDashboard";
 
@@ -76,6 +77,7 @@ export default function HomePage() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
+  const [alarmSettingsOpen, setAlarmSettingsOpen] = useState(false);
   const [ageVerificationOpen, setAgeVerificationOpen] = useState(false);
   const [parentalDashboardOpen, setParentalDashboardOpen] = useState(false);
   
@@ -320,6 +322,12 @@ export default function HomePage() {
     }
   };
 
+  // Handle opening alarm settings from sound settings
+  const handleOpenAlarms = () => {
+    setSoundSettingsOpen(false);
+    setAlarmSettingsOpen(true);
+  };
+
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-[#0A0E1A]' : 'bg-gray-50'} ${darkMode ? 'text-white' : 'text-gray-900'} overflow-hidden`}>
       {/* Sidebar */}
@@ -435,9 +443,16 @@ export default function HomePage() {
       {soundSettingsOpen && (
         <SoundSettings
           darkMode={darkMode}
-          onClose={() => setSoundSettingsOpen(false)} onOpenAlarms={function (): void {
-            throw new Error("Function not implemented.");
-          } }        />
+          onClose={() => setSoundSettingsOpen(false)}
+          onOpenAlarms={handleOpenAlarms}
+        />
+      )}
+
+      {alarmSettingsOpen && (
+        <AlarmSettings
+          darkMode={darkMode}
+          onClose={() => setAlarmSettingsOpen(false)}
+        />
       )}
 
       {modalOpen && (
