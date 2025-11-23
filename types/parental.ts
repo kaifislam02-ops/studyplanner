@@ -23,7 +23,12 @@ export type ParentalControls = {
   lockSettings: boolean;
   notifyOnLogin: boolean;
   weeklyReportEnabled: boolean;
+  notifyOnMilestone: boolean;
   notifyOnLongSession: boolean;
+  weeklyGoalHours?: number;
+  monthlyGoalHours?: number;
+  bedtimeHour?: number; // Hour (0-23) when studying should stop
+  allowLateNightStudy?: boolean;
   createdAt?: string; // ISO string
   updatedAt?: string; // ISO string
 };

@@ -95,6 +95,7 @@ export default function HomePage() {
     lockSettings: false,
     notifyOnLogin: true,
     weeklyReportEnabled: true,
+    notifyOnMilestone: true,
     notifyOnLongSession: true,
   });
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
