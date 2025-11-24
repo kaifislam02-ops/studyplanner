@@ -148,9 +148,9 @@ export default function AIDoubtSolver({ darkMode, onClose }: Props) {
       let errorText = '❌ Sorry, I encountered an error. ';
       
       if (error.message.includes('API key')) {
-        errorText += '\n\n**Setup Required:**\n1. Get an API key from https://console.anthropic.com/\n2. Create a `.env.local` file in your project root\n3. Add: `NEXT_PUBLIC_ANTHROPIC_API_KEY=your_key_here`\n4. Restart your dev server';
+        errorText += '\n\n**Setup Required:**\n1. Get a FREE API key from https://makersuite.google.com/app/apikey\n2. Create/edit `.env.local` in your project root\n3. Add: `GEMINI_API_KEY=your_key_here`\n4. Restart your dev server\n\n💡 Gemini API is FREE with generous quota!';
       } else if (error.message.includes('401') || error.message.includes('403')) {
-        errorText += '\n\nYour API key is invalid or expired. Please check your key at https://console.anthropic.com/';
+        errorText += '\n\nYour API key is invalid or expired. Please check your key at https://makersuite.google.com/app/apikey';
       } else if (error.message.includes('429')) {
         errorText += '\n\nRate limit exceeded. Please wait a moment and try again.';
       } else if (error.message.includes('500') || error.message.includes('502')) {
@@ -239,7 +239,7 @@ export default function AIDoubtSolver({ darkMode, onClose }: Props) {
             <div className="text-2xl">🤖</div>
             <div>
               <h3 className="text-lg font-bold">AI Doubt Solver</h3>
-              <p className={`text-xs ${textMuted}`}>Powered by Claude Sonnet 4</p>
+              <p className={`text-xs ${textMuted}`}>Powered by Google Gemini (FREE!)</p>
             </div>
           </div>
           
