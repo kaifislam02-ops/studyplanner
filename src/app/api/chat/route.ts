@@ -38,29 +38,54 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Call Google Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: geminiMessages,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
-        }),
+    // Call Google Gemini API - try multiple models in order of preference
+    const models = [
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash',
+      'gemini-pro',
+      'gemini-1.0-pro'
+    ];
+    
+    let response;
+    let lastError;
+    
+    for (const model of models) {
+      try {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: geminiMessages,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+              },
+            }),
+          }
+        );
+        
+        if (response.ok) {
+          break; // Success! Use this model
+        }
+        lastError = await response.text();
+      } catch (e) {
+        lastError = e;
+        continue;
       }
-    );
+    }
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (!response || !response.ok) {
       return NextResponse.json(
-        { error: errorData },
-        { status: response.status }
+        { 
+          error: { 
+            message: `Unable to connect to Gemini API. Last error: ${lastError}. Please verify your API key at https://makersuite.google.com/app/apikey` 
+          } 
+        },
+        { status: response?.status || 500 }
       );
     }
 
