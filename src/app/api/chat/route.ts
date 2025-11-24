@@ -5,7 +5,9 @@ export async function POST(request: NextRequest) {
     const { messages, system } = await request.json();
 
     // Get Gemini API key from environment variable
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
+    console.log('API Key check:', apiKey ? 'Key found' : 'Key NOT found');
 
     if (!apiKey) {
       return NextResponse.json(
