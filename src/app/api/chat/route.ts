@@ -4,16 +4,19 @@ export async function POST(request: NextRequest) {
   try {
     const { messages, system } = await request.json();
 
-    // Get Gemini API key from environment variable
+    // Get Gemini API key - check both server and client env vars
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-    console.log('API Key check:', apiKey ? 'Key found' : 'Key NOT found');
+    console.log('=== API Route Debug ===');
+    console.log('API Key exists:', !!apiKey);
+    console.log('Messages count:', messages?.length);
 
     if (!apiKey) {
+      console.error('API key not found in environment variables');
       return NextResponse.json(
         { 
           error: { 
-            message: 'API key not configured. Add GEMINI_API_KEY to .env.local. Get free key at: https://makersuite.google.com/app/apikey' 
+            message: 'API key not configured. Add GEMINI_API_KEY to .env.local' 
           } 
         },
         { status: 500 }
@@ -21,14 +24,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert messages to Gemini format
-    const geminiMessages = messages.map((msg: any) => {
-      return {
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      };
-    });
+    const geminiMessages = messages.map((msg: any) => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
 
-    // Add system prompt as first message if provided
+    // Add system prompt if provided
     if (system) {
       geminiMessages.unshift({
         role: 'user',
@@ -36,16 +37,17 @@ export async function POST(request: NextRequest) {
       });
       geminiMessages.splice(1, 0, {
         role: 'model',
-        parts: [{ text: 'I understand. I will act as an expert AI tutor and follow those guidelines.' }]
+        parts: [{ text: 'I understand. I will help as an expert AI tutor.' }]
       });
     }
 
-    // Call Google Gemini API - try multiple models in order of preference
+    console.log('Calling Gemini API...');
+
+    // Try different models
     const models = [
       'gemini-1.5-flash-latest',
       'gemini-1.5-flash',
-      'gemini-pro',
-      'gemini-1.0-pro'
+      'gemini-pro'
     ];
     
     let response;
@@ -53,6 +55,8 @@ export async function POST(request: NextRequest) {
     
     for (const model of models) {
       try {
+        console.log(`Trying model: ${model}`);
+        
         response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
@@ -71,32 +75,40 @@ export async function POST(request: NextRequest) {
         );
         
         if (response.ok) {
-          break; // Success! Use this model
+          console.log(`Success with model: ${model}`);
+          break;
         }
-        lastError = await response.text();
-      } catch (e) {
-        lastError = e;
+        
+        const errorText = await response.text();
+        console.error(`Failed with ${model}:`, errorText);
+        lastError = errorText;
+        
+      } catch (e: any) {
+        console.error(`Error with ${model}:`, e.message);
+        lastError = e.message;
         continue;
       }
     }
 
     if (!response || !response.ok) {
+      console.error('All models failed. Last error:', lastError);
       return NextResponse.json(
         { 
           error: { 
-            message: `Unable to connect to Gemini API. Last error: ${lastError}. Please verify your API key at https://makersuite.google.com/app/apikey` 
+            message: `Unable to connect to Gemini. Error: ${lastError}` 
           } 
         },
-        { status: response?.status || 500 }
+        { status: 500 }
       );
     }
 
     const data = await response.json();
+    console.log('Got response from Gemini');
     
     // Extract text from Gemini response
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I encountered an error.';
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
     
-    // Return in Claude-compatible format
+    // Return in format expected by frontend
     return NextResponse.json({
       content: [{ text }]
     });
